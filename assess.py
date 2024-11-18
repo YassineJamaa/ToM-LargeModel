@@ -7,13 +7,13 @@ import torch
 from typing import Optional
 
 def compute_cand_score(row):
-        logits = row['log_sm']
-        n = row['last_tokens']
-        last_token = row["last_token_position"]
-        if n == 1:
-            return logits[last_token-1] # Return the last element
-        elif n > 1:
-            return sum(logits[last_token-n:last_token-1]) / n  # Return the mean of the last N elements
+    logits = row['log_sm']
+    n = row['last_tokens']
+    last_token = row["last_token_position"]
+    if n == 1:
+        return logits[last_token-1] # Return the last element
+    elif n > 1:
+        return sum(logits[last_token-n:last_token-1]) / n  # Return the mean of the last N elements
 
 class AssessBenchmark:
     def __init__(self,
