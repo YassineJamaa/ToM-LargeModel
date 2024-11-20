@@ -1,10 +1,11 @@
 from localise_units import ImportLLMfromHF, LocImportantUnits
-from benchmark import BenchmarkToMi
+from benchmark import BenchmarkToMi, BenchmarkOpenToM
 from tqdm import tqdm
 import numpy as np
 import pandas as pd
 import torch
 from typing import Optional
+from torch.utils.data import Dataset
 
 def compute_cand_score(row):
     logits = row['log_sm']
@@ -86,15 +87,15 @@ class AssessBenchmark:
         return subset
     
     def experiment(self, 
-                   bn_data: BenchmarkToMi,
+                   bn_data: Dataset,
                    pct=0.01):
         self.llm.model.eval()
         assess_dict = {
             "no_ablation": None,
             f"ablate_top_{int(pct * 100)}": self.loc_units.get_masked_ktop(pct).T,
-            # f"ablate_random1_{int(pct * 100)}": self.loc_units.get_random_mask(pct).T,
-            # f"ablate_random2_{int(pct * 100)}": self.loc_units.get_random_mask(pct).T,
-            # f"ablate_random3_{int(pct * 100)}": self.loc_units.get_random_mask(pct).T 
+            f"ablate_random1_{int(pct * 100)}": self.loc_units.get_random_mask(pct).T,
+            f"ablate_random2_{int(pct * 100)}": self.loc_units.get_random_mask(pct).T,
+            f"ablate_random3_{int(pct * 100)}": self.loc_units.get_random_mask(pct).T 
         }
         df = bn_data.data.copy()
         exp_df = bn_data.expanded_df.copy()
