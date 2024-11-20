@@ -19,10 +19,8 @@ def compute_cand_score(row):
 class AssessBenchmark:
     def __init__(self,
                  llm: ImportLLMfromHF,
-                 loc_units: LocImportantUnits,
-                 batch_size: int = 20):
+                 loc_units: LocImportantUnits):
         self.llm = llm
-        self.batch_size = batch_size
         self.loc_units = loc_units
     
     def clear_hooks(self):
@@ -47,9 +45,50 @@ class AssessBenchmark:
             output[0][:, :, unit_indices] = 0
         return hook_ablate
     
+    # def assess(self, 
+    #            data: pd.DataFrame,
+    #            mask: Optional[np.ndarray] = None,
+    #            batch_size: int = 20):
+    #     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #     self.llm.model.to(device)
+    #     self.clear_hooks()
+
+    #     if mask is not None:
+    #         for idx, layer in enumerate(self.llm.model.model.layers):
+    #             layer.register_forward_hook(self.get_hook_ablate(idx, mask))
+
+    #     exp_df = data.copy()
+    #     logsm_list = []
+    #     last_token_position_list = []
+    #     for i in tqdm(range(0, len(exp_df), batch_size)):
+    #         batch_texts = exp_df["fusion"].tolist()[i:i+batch_size]
+    #         # Tokenize the batch of texts and get input IDs
+    #         inputs = self.llm.tokenizer(batch_texts, return_tensors="pt", padding=True, truncation=True).to(device)
+
+    #         with torch.no_grad():
+    #             outputs = self.llm.model(**inputs)
+    #             logprobs = torch.log_softmax(outputs.logits, dim=-1).cpu()
+    #             logprobs_ids = torch.gather(logprobs[:,:-1], 2, inputs["input_ids"][:,1:].cpu().unsqueeze(-1)).squeeze(-1)
+    #         last_token_position = (inputs["attention_mask"].sum(dim=1) - 1).cpu()
+    #         last_token_position_list.extend(last_token_position.tolist())
+    #         logsm_list.extend(logprobs_ids)
+
+    #     # last_token_positions = (inputs["attention_mask"].sum(dim=1) - 1)
+    #     exp_df["log_sm"] = logsm_list
+    #     exp_df["last_token_position"] = last_token_position_list
+    #     exp_df["score_cand"] = exp_df.apply(compute_cand_score, axis=1)
+
+    #     # # Group by 'id_prompt' and find the row with the minimum surprisal for each group
+    #     best_cand_df = exp_df.loc[exp_df.groupby('id_prompt')['score_cand'].idxmax()]
+    #     # # Reset the index if necessary
+    #     best_cand_df = best_cand_df.reset_index(drop=True)
+    #     subset = best_cand_df[["id_prompt", "cand"]]
+    #     return subset
+
     def assess(self, 
-               data: pd.DataFrame,
-               mask: Optional[np.ndarray] = None):
+           data: pd.DataFrame,
+           mask: Optional[np.ndarray] = None,
+           batch_size: int = 20):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.llm.model.to(device)
         self.clear_hooks()
@@ -61,33 +100,39 @@ class AssessBenchmark:
         exp_df = data.copy()
         logsm_list = []
         last_token_position_list = []
-        for i in tqdm(range(0, len(exp_df), self.batch_size)):
-            batch_texts = exp_df["fusion"].tolist()[i:i+self.batch_size]
+
+        for i in tqdm(range(0, len(exp_df), batch_size)):
+            batch_texts = exp_df["fusion"].tolist()[i:i+batch_size]
             # Tokenize the batch of texts and get input IDs
-            inputs = self.llm.tokenizer(batch_texts, return_tensors="pt", padding=True, truncation=True).to(device)
+            inputs = self.llm.tokenizer(batch_texts, return_tensors="pt", padding=True, truncation=True) # remove truncation=True
+            inputs = {key: val.to(device) for key, val in inputs.items()}  # Move inputs to GPU
 
             with torch.no_grad():
                 outputs = self.llm.model(**inputs)
-                logprobs = torch.log_softmax(outputs.logits, dim=-1).cpu()
+                logprobs = torch.log_softmax(outputs.logits, dim=-1).cpu()  # Move logprobs to CPU
                 logprobs_ids = torch.gather(logprobs[:,:-1], 2, inputs["input_ids"][:,1:].cpu().unsqueeze(-1)).squeeze(-1)
-            last_token_position = (inputs["attention_mask"].sum(dim=1) - 1).cpu()
+
+            last_token_position = (inputs["attention_mask"].sum(dim=1) - 1).cpu()  # Move to CPU
             last_token_position_list.extend(last_token_position.tolist())
             logsm_list.extend(logprobs_ids)
 
-        # last_token_positions = (inputs["attention_mask"].sum(dim=1) - 1)
+            del inputs, outputs, logprobs, logprobs_ids  # Free up GPU memory
+            torch.cuda.empty_cache()  # Clear unused cached memory
+
         exp_df["log_sm"] = logsm_list
         exp_df["last_token_position"] = last_token_position_list
         exp_df["score_cand"] = exp_df.apply(compute_cand_score, axis=1)
 
-        # # Group by 'id_prompt' and find the row with the minimum surprisal for each group
+        # Group by 'id_prompt' and find the row with the minimum surprisal for each group
         best_cand_df = exp_df.loc[exp_df.groupby('id_prompt')['score_cand'].idxmax()]
-        # # Reset the index if necessary
         best_cand_df = best_cand_df.reset_index(drop=True)
         subset = best_cand_df[["id_prompt", "cand"]]
         return subset
+
     
     def experiment(self, 
                    bn_data: Dataset,
+                   batch_size: int = 20,
                    pct=0.01):
         self.llm.model.eval()
         assess_dict = {
@@ -105,7 +150,7 @@ class AssessBenchmark:
         ).apply(len)
         df = df.reset_index()
         for key, mask in assess_dict.items():
-            subset = self.assess(exp_df, mask)
+            subset = self.assess(exp_df, mask, batch_size)
             df = df.merge(subset, left_on="index", right_on="id_prompt", how="left")
             df = df.rename(columns={"cand": f"predict_{key}"})
             df = df.drop(columns=["id_prompt"]) 
