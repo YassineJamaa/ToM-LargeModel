@@ -61,9 +61,11 @@ class BenchmarkToMi(Dataset):
         }
     
 class BenchmarkOpenToM(Dataset):
-    def __init__(self, subset: Optional[int]=None):
+    def __init__(self, 
+                 order: Optional[str]=None,
+                 subset: Optional[int]=None):
         df = self.preprocess()
-        self.data = self.classic_prompting(df, subset)
+        self.data = self.classic_prompting(df, order, subset)
         self.expanded_df = pd.DataFrame({
             "id_prompt": self.data.index.repeat(self.data["cands"].str.len()),
             "id_cand": [i for sublist in self.data["cands"] for i in range(len(sublist))],
@@ -76,6 +78,7 @@ class BenchmarkOpenToM(Dataset):
 
     def classic_prompting(self, 
                           df: pd.DataFrame,
+                          order: Optional[str]=None,
                           subset: Optional[int]=None):
         context = (
             "The following multiple choice question is based on the following story. The question "
@@ -87,6 +90,10 @@ class BenchmarkOpenToM(Dataset):
                         "\n".join([f"- {cand}" for cand in row["cands"]]) +
                         "\nAnswer:", axis=1)
         
+        if (order is not None):
+            df = df[df["qOrder"]==order]
+            df.reset_index(drop=True, inplace=True)
+
         if (subset is not None) and isinstance(subset, int) and (subset > 0) and (subset < len(df)):
             df = df.iloc[:subset]
         return df  
@@ -101,8 +108,8 @@ class BenchmarkOpenToM(Dataset):
         df = df.drop(columns=["question"])
         df.rename(columns={"question_text": "question"}, inplace=True)
         df["is_closed_question"] = df["answer"].apply(lambda x: True if x in ["Yes", "No"] else False)
-        df["qOrder"] = df["type"].apply(lambda x: "first order" if x in ["location-fo", "multihop-fo"] 
-                        else "second order" if x in ["location-so", "multihop-so"] 
+        df["qOrder"] = df["type"].apply(lambda x: "first_order" if x in ["location-fo", "multihop-fo"] 
+                        else "second_order" if x in ["location-so", "multihop-so"] 
                         else "No")
         df["cands"] = df.apply(
             lambda row: ["Yes", "No"] if row["is_closed_question"] else 

@@ -28,6 +28,9 @@ class ToMLocDataset(Dataset):
         belief_question = [read_question(f"dataset/prompt/tomloc/{idx}b_question.txt") for idx in range(1, 11)]
         photograph_question = [read_question(f"dataset/prompt/tomloc/{idx}p_question.txt") for idx in range(1, 11)]
 
+        # Set a fixed seed for reproducibility
+        rng = np.random.default_rng(seed=42)
+        
         self.positive = [context_template.format(instruction=instruction, story=story, question=question, answer=np.random.choice(["True", "False"])) for story, question in zip(belief_stories, belief_question)]
         self.negative = [context_template.format(instruction=instruction, story=story, question=question, answer=np.random.choice(["True", "False"])) for story, question in zip(photograph_stories, photograph_question)]
 
