@@ -9,5 +9,4 @@ test.ipynb
 # Ignore folder with datas (too loud)
 Result-Experiment/
 Output/
-checkpoint/
-experiment/
+experiment/checkpoint/
