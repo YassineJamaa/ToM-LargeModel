@@ -1,0 +1,13 @@
+# Ignore files related to the cluster
+run*
+error_*
+output_*
+debug.ipynb
+test.ipynb
+.env
+
+# Ignore folder with datas (too loud)
+Result-Experiment/
+Output/
+checkpoint/
+experiment/
