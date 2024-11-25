@@ -5,17 +5,18 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import sys
 from typing import Optional
 import argparse
+import pandas as pd
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src import (ImportLLMfromHF, 
-                 LayersUnits, 
+from src import (ImportLLM, 
+                 LayersUnitsLLM, 
                  LocImportantUnits,
                  ToMLocDataset,
-                 BenchmarkToMi, 
-                 BenchmarkOpenToM,
                  AssessBenchmark,)
+
+from benchmark import BenchmarkToMi, BenchmarkOpenToM
 
 def setup_environment():
     """Load environment variables and configure device."""
@@ -73,8 +74,8 @@ def main():
 
     # Assess OpenToM Benchmark
     tom_data = ToMLocDataset()
-    llm = ImportLLMfromHF(model, tokenizer)
-    units = LayersUnits(llm, tom_data)
+    llm = ImportLLM(model, tokenizer)
+    units = LayersUnitsLLM(llm, tom_data)
     loc_units = LocImportantUnits(checkpoint, units.data_activation)
 
     # Output OpenToM
