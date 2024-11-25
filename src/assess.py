@@ -1,11 +1,11 @@
-from .localise_units import ImportLLMfromHF, LocImportantUnits
-from .benchmark import BenchmarkToMi, BenchmarkOpenToM
+from src.localisation import LocImportantUnits
+from src.huggingface_models import ImportLLM
+from benchmark import BenchmarkBaseline
 from tqdm import tqdm
 import numpy as np
 import pandas as pd
 import torch
 from typing import Optional
-from torch.utils.data import Dataset
 from collections import OrderedDict
 import os
 from itertools import islice
@@ -21,20 +21,20 @@ def compute_cand_score(row):
 
 class AssessBenchmark:
     def __init__(self,
-                 llm: ImportLLMfromHF,
+                 llm: ImportLLM,
                  loc_units: LocImportantUnits):
         self.llm = llm
         self.loc_units = loc_units
-    
+
     def clear_hooks(self):
         """Clears all registered forward hooks in the model layers."""
         for layer in self.llm.model.model.layers:
             layer._forward_hooks.clear()
-    
+
     def get_hook_ablate(self, idx, mask):
         """
         Defines a hook function to ablate specific units based on a mask.
-        
+
         Args:
             idx (int): Layer index.
             mask (torch.Tensor): Binary mask for ablation at the given layer.
@@ -47,8 +47,8 @@ class AssessBenchmark:
             unit_indices = mask_layer.nonzero()[0]
             output[0][:, :, unit_indices] = 0
         return hook_ablate
-    
-    def assess(self, 
+
+    def assess(self,
            data: pd.DataFrame,
            mask: Optional[np.ndarray] = None,
            batch_size: int = 20):
@@ -92,8 +92,8 @@ class AssessBenchmark:
         subset = best_cand_df[["id_prompt", "cand"]]
         return subset
 
-    def experiment(self, 
-                   bn_data: Dataset,
+    def experiment(self,
+                   bn_data: BenchmarkBaseline,
                    check_path: Optional[str]=None,
                    batch_size: int = 20,
                    pct=0.01):
@@ -105,10 +105,10 @@ class AssessBenchmark:
             (f"ablate_random2_{int(pct * 100)}", self.loc_units.get_random_mask(pct, seed=12345).T),
             (f"ablate_random3_{int(pct * 100)}", self.loc_units.get_random_mask(pct, seed=98765).T)
         ])
-        info_process = ["No Ablation", 
-                        f"Ablation Top-{pct*100:.2f}%", 
+        info_process = ["No Ablation",
+                        f"Ablation Top-{pct*100:.2f}%",
                         f"Random Ablation {pct*100:.2f}% (1/3)",
-                        f"Random Ablation {pct*100:.2f}% (2/3)", 
+                        f"Random Ablation {pct*100:.2f}% (2/3)",
                         f"Random Ablation {pct*100:.2f}% (3/3)"]
 
         if check_path and os.path.exists(check_path):
@@ -119,7 +119,7 @@ class AssessBenchmark:
                 if var_col not in df.columns:
                     step = idx
                     break
-        else:  
+        else:
             df = bn_data.data.copy()
             step = 0
         exp_df = bn_data.expanded_df.copy()
@@ -134,7 +134,7 @@ class AssessBenchmark:
             subset = self.assess(exp_df, mask, batch_size)
             df = df.merge(subset, left_index=True, right_on="id_prompt", how="left")
             df = df.rename(columns={"cand": f"predict_{key}"})
-            df = df.drop(columns=["id_prompt"]) 
+            df = df.drop(columns=["id_prompt"])
             # Save intermediate results if save_path is provided
             if check_path:
                 df.to_csv(check_path, index=False)
