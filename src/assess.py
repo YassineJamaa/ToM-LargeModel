@@ -17,7 +17,7 @@ def compute_cand_score(row):
     if n == 1:
         return logits[last_token-1] # Return the last element
     elif n > 1:
-        return sum(logits[last_token-n:last_token-1]) / n  # Return the mean of the last N elements
+        return sum(logits[last_token-n:last_token]) / n  # Return the mean of the last N elements
 
 class AssessBenchmark:
     def __init__(self,
@@ -123,6 +123,7 @@ class AssessBenchmark:
             df = bn_data.data.copy()
             step = 0
         exp_df = bn_data.expanded_df.copy()
+
         # Tokenize the "fusion" variable starting from "prompt_end_pos"
         exp_df["last_tokens"] = exp_df.apply(
             lambda row: self.llm.tokenizer(row["fusion"][row["prompt_end_pos"]:], add_special_tokens=False)["input_ids"], axis=1
