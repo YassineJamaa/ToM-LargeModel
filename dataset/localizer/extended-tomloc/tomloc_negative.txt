@@ -1,0 +1,299 @@
+Story: Accounts of the country's bustling economic success were recorded in both fiction and non-fiction books from the early 1900s. Soon after, a horrible plague hit the country and the country was sent into an economic depression.
+Question: Early 1900s novels portray the country as experiencing economic wealth.
+
+Story: Sargent famously painted the south bank of the river in 1885. In 1910 a huge dam was built, flooding out the whole river basin, killing the old forests. Now the whole area is under water.
+Question: In the painting the south bank of the river is wooded.
+
+Story: A long time ago, an explorer mapped a small island. Since then, the water levels rose and only a tiny part of the island is now left above water.
+Question: On the explorer's maps, the island appears to be mostly submerged.
+
+Story: At the time a portrait was drawn of a young man, he had short brown hair and no facial hair. Now the man's hair is long and gray and so is his beard.
+Question: Today the length of the man's hair is long.
+
+Story: The girl's middle school pictures showed her wearing a white blouse. Later, a red sock was accidentally washed with the blouse and the blouse turned pink.
+Question: Today the color of the blouse is white.
+
+Story: A biography describes the room as it was in 1965. Originally the walls were covered in dark wallpaper. By 1965 the paper had been stripped and replaced with cream paint.
+Question: The biography says that the room was light.
+
+Story: When the picture was taken of the house, it was one story tall. Since then, the renovators added an additional story and a garage.
+Question: The house is currently one story.
+
+Story: A volcano erupted on a Carribean island three months ago. Barren lava rock is all that remains today. Satellite photographs show the island as it was before the eruption.
+Question: Today, the island is covered in lava rock.
+
+Story: A large oak tree stood in front of City Hall from the time the building was built. Last year the tree fell down and was replaced by a stone fountain.
+Question: An antique drawing of City Hall shows a fountain in front.
+
+Story: Old maps of the islands near Titan are displayed in the Maritime museum. Erosion has since taken its toll, leaving only the three largest islands.
+Question: Near Titan today there are many islands.
+
+Story: In 1930, an artist painted a view of the park where a large fountain stood in the center. In the 1950s, the fountain was removed, and the space was turned into a playground for children.
+Question: The painting shows a fountain in the park.
+
+Story: A famous photograph from the 1970s shows a wide river winding through a forest. Due to recent deforestation, most of the trees along the riverbank have been cleared, leaving it barren.
+Question: Today, the riverbank is lined with dense forest.
+
+Story: When a photo was taken of a car in the 1980s, it was bright red. Over the years, the paint faded, and it was eventually repainted a dark blue.
+Question: Today, the car is red.
+
+Story: In 1895, an explorer documented a towering glacier near the coast. Over the years, the glacier has melted significantly, leaving only a small fragment.
+Question: The explorer’s notes describe a large glacier near the coast.
+
+Story: A historical painting from 1820 shows a hill covered in wildflowers. In modern times, the area has been developed into a residential neighborhood.
+Question: Today, the hill is covered in wildflowers.
+
+Story: A 1950s movie filmed in black-and-white shows the city’s skyline with a prominent clock tower. The tower was demolished in the 1980s, and a skyscraper now stands in its place.
+Question: The movie depicts a clock tower in the skyline.
+
+Story: Decades ago, a boy wore a red baseball cap in his school photograph. As an adult, he still keeps the cap, but the color has faded to a dull orange.
+Question: Today, the baseball cap is bright red.
+
+Story: A 1902 postcard depicts a thriving beach town filled with wooden piers and small boats in the harbor. Today, the town remains a popular tourist destination with most of the original piers still intact.
+Question: The postcard shows wooden piers along the beach.
+
+Story: An old family photo shows a house surrounded by fields of flowers. Over the decades, the fields were replaced by asphalt parking lots.
+Question: Today, the house is surrounded by flowers.
+
+Story: In 1915, a local artist painted the main street of the town, which was lined with horse-drawn carriages. Today, the same street is filled with cars, but many of the original buildings still stand.
+Question: The painting depicts horse-drawn carriages on the street.
+
+Story: A famous statue in the town square was carved from white marble in 1890. Due to pollution over the years, the marble has darkened to a dull gray. 
+Question: Today, the statue is white.
+
+Story: A portrait of the city’s skyline was painted in 1920, showing a large factory with smoking chimneys. The factory was demolished in 1965, and a park now stands in its place. 
+Question: Today, the city skyline has a park where the factory once stood.
+
+Story: In 1950, a famous clock tower had bright blue clock hands. After years of wear and weathering, the clock hands have now turned to a faded green. 
+Question: The clock hands were originally blue.
+
+Story: A painting of the mountain range from 1805 shows the peaks covered in snow. Due to climate change, the mountains no longer have snow-capped peaks. 
+Question: Today, the mountain peaks are covered in snow.
+
+Story: An old church was built with a tall spire. During a storm in 1982, the spire was struck by lightning and destroyed. A new flat roof was added in its place. 
+Question: The church still has a tall spire.
+
+Story: An artist sketched a bridge crossing the river in 1930, showing the bridge with its original wooden planks. Today, the planks have been replaced by concrete. 
+Question: The bridge today has wooden planks.
+
+Story: A large oak tree is featured in a painting from 1802. Though the tree still stands today, it has grown much taller and thicker. 
+Question: The oak tree still stands today.
+
+Story: A photograph taken in 1955 shows a pier stretching out into the ocean. Over time, the ocean level rose, and the pier is now partially submerged. 
+Question: Today, the pier is partially submerged in water.
+
+Story: A map of the city drawn in 1915 shows a bustling marketplace. The marketplace was demolished in 1970 to make way for a shopping mall. 
+Question: The city today still has the marketplace shown in the 1915 map.
+
+Story: A historical photo of the town square from 1900 shows a small bakery. Though the original building has been expanded, the bakery is still in business today. 
+Question: The bakery still exists today.
+
+Story: A large market square was paved with cobblestones 200 years ago. Over time, the square was modernized, and the cobblestones were replaced with smooth tiles.
+Question: Today, the square is covered with smooth tiles.
+
+Story: A painting from 1875 shows a bustling harbor with dozens of ships docked. Since then, the harbor has been abandoned, and only one or two ships can be seen today.
+Question: Today, the harbor is bustling with ships.
+
+Story: The mountain range had heavy snow cover in the 1960s, but in recent years, climate change has reduced snowfall significantly, leaving many of the peaks bare.
+Question: Today, the mountain range has less snow cover than it did in the 1960s.
+
+Story: A photograph from 1950 shows a thriving downtown full of vibrant storefronts. Since then, the area has suffered from economic decline, and most of the storefronts are now boarded up.
+Question: Today, the downtown area is thriving.
+
+Story: A portrait of a woman from the 1920s shows her with a bright red dress. Years later, the dress was stored in a trunk and faded into a dull pink.
+Question: Today, the color of the dress is red.
+
+Story: The palace gardens were famous for their tulips in the early 1900s. Today, the tulips have been replaced by rose bushes, which line the garden paths.
+Question: Today, the palace gardens are known for their tulips.
+
+Story: An explorer described the island in his journal as being densely forested. Over time, logging and deforestation have cleared most of the island, leaving it mostly barren.
+Question: Today, the island is densely forested.
+
+Story: A village had a windmill that was used for grinding grain in the 1800s. The windmill was destroyed in a storm 50 years ago and has never been rebuilt.
+Question: The windmill still stands today.
+
+Story: A statue in the town square was originally made of bronze. Over time, the metal weathered, and the statue now has a greenish patina.
+Question: Today, the statue is bronze in color.
+
+Story: The hotel's grand ballroom had a marble floor when it was built in 1905. During renovations in the 1990s, the floor was replaced with hardwood.
+Question: Today, the grand ballroom has a hardwood floor.
+
+Story: The famous shipwreck has been slowly deteriorating at the bottom of the ocean for over 100 years, and much of the structure has collapsed.
+Question: Today, the shipwreck is still mostly intact.
+
+Story: The historical lighthouse was built on a cliff in 1850. Coastal erosion has caused the cliff to crumble, and the lighthouse fell into the sea 10 years ago.
+Question: The lighthouse still stands on the cliff today.
+
+Story: A library was once filled with thousands of books, but a fire in the 1970s destroyed nearly all of them. Today, only a few books remain.
+Question: Today, the library is still filled with thousands of books.
+
+Story: A photograph from the 1930s shows a bustling train station. Today, the station is abandoned, and no trains pass through anymore.
+Question: The train station is still bustling today.
+
+Story: The river once ran clear through the town, but pollution from factories upstream has turned the water murky and brown.
+Question: Today, the river is murky and brown.
+
+Story: In the 1800s, the town's central clock tower chimed every hour. The clock stopped working decades ago, and now it only shows the correct time twice a day.
+Question: Today, the clock tower still chimes every hour.
+
+Story: The museum once displayed a collection of rare artifacts. After a theft 20 years ago, many of the artifacts were stolen and never recovered.
+Question: The museum still displays its full collection of rare artifacts today.
+
+Story: A large forest fire destroyed thousands of acres of trees a decade ago. Today, new growth has started to return, but most of the area is still barren.
+Question: Today, the forest is fully grown again.
+
+Story: A famous cathedral had stained glass windows that were shattered during a war. They were replaced with plain glass in the years following the conflict.
+Question: Today, the cathedral has stained glass windows.
+
+Story: The iconic bridge over the river collapsed in a flood five years ago, and a new modern bridge was built in its place.
+Question: Today, the iconic bridge still stands over the river.
+
+Story: The castle's moat was once filled with water, but it was drained in the 1800s and is now dry.
+Question: Today, the moat surrounding the castle is dry.
+
+Story: A town's famous elm tree was over 300 years old when it was struck by lightning and destroyed two years ago.
+Question: The famous elm tree still stands today.
+
+Story: The small town had a vibrant market square, but in recent years, it has been converted into a parking lot.
+Question: Today, the town’s market square is still vibrant with stalls.
+
+Story: The village fountain used to be the center of town gatherings, but it was dismantled and replaced with a statue during a renovation project.
+Question: Today, the fountain is still the center of town gatherings.
+
+Story: The town hall had a tall clock tower, but it was damaged in an earthquake and torn down. Today, the town hall stands without the tower.
+Question: The town hall still has its clock tower.
+
+Story: A portrait painted 30 years ago shows a young man with a clean-shaven face. Today, the man has a full beard.
+Question: Today, the man is clean-shaven.
+
+Story: A large tree once shaded the park, but it was cut down to make room for new buildings.
+Question: The large tree still shades the park today.
+
+Story: The small island was uninhabited when explorers first discovered it. Since then, a bustling village has grown, with homes and businesses covering much of the land.
+Question: Today, the island is still uninhabited.
+
+Story: A theater in the city center was abandoned in the 1950s, but it has recently been restored to its former glory and now hosts regular performances.
+Question: Today, the theater is still abandoned.
+
+Story: The old stone bridge that crossed the river was replaced by a modern steel bridge last year.
+Question: The old stone bridge still crosses the river today.
+
+Story: A vineyard famous for producing wine in the 1800s was overtaken by wild plants after being abandoned.
+Question: Today, the vineyard is covered by wild plants.
+
+Story: The town’s church had a wooden steeple, but it was destroyed in a storm 50 years ago and never rebuilt.
+Question: The church still has its original wooden steeple today.
+
+Story: A forest on the edge of town was once dense and full of wildlife, but most of the trees were cleared for logging.
+Question: Today, the forest on the edge of town is still dense and full of wildlife.
+
+Story: The river running through the city was once narrow and winding, but in recent years, it has been dredged and straightened to allow larger ships to pass.
+Question: Today, the river is narrow and winding.
+
+Story: A famous amusement park had a roller coaster that was shut down in the 1980s and replaced with a different ride.
+Question: The roller coaster is still in operation today.
+
+Story: The central library once had a large reading room with long wooden tables. The room was converted into offices during renovations.
+Question: The library still has a large reading room today.
+
+Story: A fisherman’s village on the coast was hit by a storm, and most of the buildings were destroyed.
+Question: Today, most of the buildings in the fisherman’s village are destroyed.
+
+Story: An artist painted a field of sunflowers in 1880. Today, the field is planted with wheat.
+Question: Today, the field is full of sunflowers.
+
+Story: The town’s opera house was once a cultural landmark, but it was demolished to make way for a shopping center.
+Question: The town’s opera house is still a cultural landmark today.
+
+Story: A photograph from the 1940s shows a family farm with wide-open fields. Over time, the fields were sold off and developed into residential neighborhoods.
+Question: Today, the family farm still has wide-open fields.
+
+Story: The railway station in the town was built in the 1800s, and the tracks ran through the town. Today, the tracks have been removed, and the station is used as a museum.
+Question: Today, trains still pass through the railway station in the town.
+
+Story: A small cabin in the woods was once the home of a famous writer, but it burned down in a forest fire 30 years ago.
+Question: The famous writer’s cabin still stands today.
+
+Story: The village market used to sell local produce, but it was replaced by a supermarket that now dominates the area.
+Question: Today, the village market still sells local produce.
+
+Story: A large estate with a beautiful garden was sold to developers and turned into a shopping mall.
+Question: The estate and garden still exist today.
+
+Story: The main road through the city was lined with elm trees in the 1900s, but a disease wiped out most of the trees.
+Question: Today, the main road is still lined with elm trees.
+
+Story: A large public fountain in the square was drained and turned into a flowerbed.
+Question: Today, the public fountain is still in the square.
+
+Story: The theater had velvet seats when it was first built, but they were replaced with leather seats during renovations.
+Question: Today, the theater still has velvet seats.
+
+Story: The mountains around the town were once home to a large glacier. Today, due to global warming, the glacier has almost entirely melted.
+Question: Today, the mountains still have a large glacier.
+
+Story: The old mill by the river stopped working decades ago, but it has since been restored and is now operational.
+Question: The old mill is still not operational today.
+
+Story: The lake by the village was once clear, but in recent years, pollution has caused it to become murky and filled with algae.
+Question: Today, the lake is clear and pristine. 
+
+Story: The old lighthouse was a landmark on the coast for centuries. Recently, it was decommissioned and demolished, and a modern one was built in its place.
+Question: The lighthouse that stands on the coast today is the modern one.
+
+Story: When the castle was first constructed, its walls were painted white. Over the years, they have been worn down by the weather and are now gray with moss.
+Question: The walls of the castle are currently painted white.
+
+Story: When the statue was first unveiled in the 1800s, it was a shiny bronze. Today, after years of exposure to the elements, it has turned green with patina.
+Question: The statue is now green.
+
+Story: The artist completed the mural on the building's exterior in 1990. Last year, the building was renovated, and the mural was replaced with new windows.
+Question: The mural is still visible on the building.
+
+Story: A hundred years ago, a lake covered the entire valley. Today, the lake has mostly dried up, leaving behind only a small pond.
+Question: The lake still covers the entire valley.
+
+Story: A painting from the 1700s shows a grand oak tree beside the manor house. The tree still stands tall today, despite being centuries old.
+Question: The grand oak tree still stands beside the manor house.
+
+Story: A shipwreck from the 1800s was discovered on the ocean floor. Over the years, the wreck has decayed, and very little of it remains intact.
+Question: The shipwreck is mostly decayed now.
+
+Story: In the 1950s, the river ran clean and clear, and people often swam in it. However, industrial pollution over the years has turned the water murky and unsafe for swimming.
+Question: The river is safe to swim in today.
+
+Story: The small village was depicted in paintings with a windmill on a nearby hill. The windmill was destroyed in a storm a few years ago and has not been rebuilt.
+Question: The windmill still stands on the hill today.
+
+Story: When the museum first opened, it housed many artifacts from ancient civilizations. Due to a fire last year, most of the collection was lost.
+Question: The museum still has many artifacts from ancient civilizations.
+
+Story: The building's rooftop garden was once full of vibrant flowers and shrubs. After years of neglect, most of the plants have died, leaving only a few hardy bushes.
+Question: The rooftop garden is mostly barren now.
+
+Story: When the train station was first built, it had a tall clock tower. The clock tower was removed during renovations, and now only a small clock hangs in the main hall.
+Question: The clock tower is still part of the train station.
+
+Story: The city was once famous for its sprawling parks, full of trees and wildlife. Today, most of the parks have been replaced by apartment buildings and parking lots.
+Question: The city still has many sprawling parks.
+
+Story: The old library had wooden shelves and reading lamps when it was first built. It has since been modernized, with steel shelves and bright LED lighting.
+Question: The library still has wooden shelves and reading lamps.
+
+Story: A map from the 1800s shows a vast desert in the region. However, recent irrigation projects have turned the desert into fertile farmland.
+Question: The region is still a vast desert today.
+
+Story: Photographs from the 1920s show the bridge with no railings. Railings were added in the 1960s to improve safety, and they remain in place today.
+Question: The bridge has railings now.
+
+Story: The mountain village once sat at the base of a snow-capped peak. Due to climate change, the snow has melted, and the peak is now barren and rocky.
+Question: The peak is still covered in snow today.
+
+Story: The famous sculpture in the town square was originally placed there in the 1800s. It was relocated to a museum five years ago to protect it from weather damage.
+Question: The sculpture is still in the town square.
+
+Story: A map from the 1700s shows the river running along the eastern edge of the town. After a series of floods, the river shifted its course and now runs to the west.
+Question: The river now runs to the west of the town.
+
+Story: The town hall was painted a bright red when it was first constructed. Recently, it was repainted a pale yellow, which is its current color.
+Question: The town hall is now pale yellow.
