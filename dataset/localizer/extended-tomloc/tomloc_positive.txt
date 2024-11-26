@@ -1,0 +1,284 @@
+Story: A window wiper was commissioned by a CEO to wipe an entire building. He finished the right side, but his platform broke before he could do the left side. The next morning the CEO arrived with foreign investors.
+Question: The CEO comes to work and discovers that all of the walls are cleaned.
+
+Story: Sally and Greg called ahead of time to make a reservation for the back-country cabin. The park ranger forgot to write down the reservation and two other hikers got to the cabin first.
+Question: When the hikers arrive they see no one in their cabin.
+
+Story: Larry chose a debated topic for his class paper due on Friday. The news on Thursday indicated that the debate had been solved but Larry never read it.
+Question: When Larry writes his paper he thinks the debate has been solved.
+
+Story: Laura didn't have time to braid her horse's mane before going to camp. While she was at camp, William brushed Laura's horse and braided the horse's mane for her.
+Question: Laura returns assuming that her horse's hair isn't braided
+
+Story: Amy walked to work today. When George woke up, he saw her car in the drive. Her room was quiet and dark. George knows that when Amy is sick, she lies down in a dark room.
+Question: In fact, Amy walked to work.
+
+Story: Emma left her coffee mug on her desk when she went to a meeting. During the meeting, her coworker Jane moved the mug to the kitchen to wash it.
+Question: Emma returns to her desk assuming her mug is still there.
+
+Story: Mike ordered a pizza for delivery and went to take a shower. While he was in the shower, the pizza was delivered, and his roommate Sarah left it on the kitchen table.
+Question: Mike comes out of the shower believing the pizza hasn’t arrived yet.
+
+Story: James lent his book to Alex, who returned it by leaving it on James's desk. Before James came back to his room, their mutual friend Tim moved the book to the bookshelf.
+Question: James believes his book is still on his desk.
+
+Story: Rebecca forgot her phone at home before going to the store. Her sister found the phone and put it in Rebecca’s bag.
+Question: Rebecca gets to the store and believes she has her phone.
+
+Story: Ben locked the front door when he left the house. However, while he was gone, his wife returned home and unlocked the door.
+Question: Ben returns home expecting the door to be unlocked.
+
+Story: Chloe placed her guitar in the living room before leaving for work. Her brother later moved the guitar to the basement to make space.
+Question: Chloe believes her guitar is still in the living room when she comes home.
+
+Story: Adam packed his suitcase and left it by the door before going to bed. Overnight, his sister repacked it, adding extra clothes.
+Question: Adam wakes up believing his suitcase still contains only what he originally packed.
+
+Story: Sophia parked her bike in front of the library. When she was inside, a friend noticed the bike and moved it behind the building to avoid rain damage.
+Question: Sophia exits the library thinking her bike is still in front.
+
+Story: Tom put his jacket on the coat rack before dinner. After dinner, his mom folded it and placed it in his room.
+Question: Tom goes to the coat rack believing his jacket is still there.
+
+Story: Julie went to the kitchen and left her laptop on the table. While she was gone, her dog accidentally knocked it onto the floor.
+Question: Julie comes back believing her laptop is still on the table.
+
+Story: Jake was reading a book when his phone buzzed. It was his friend Tom asking if he could borrow Jake's headphones. Jake left the headphones on the table and went out to meet Tom. While Jake was gone, his sister moved the headphones to the couch.
+Question: Jake returns expecting to find the headphones on the table.
+
+Story: Monica prepared her presentation on her laptop the night before her big meeting. When she left the house, her brother accidentally knocked over a glass of water, spilling it onto her laptop. Monica had no idea.
+Question: Monica arrives at the meeting expecting to use her laptop.
+
+Story: Henry parked his bicycle in front of the grocery store and went inside to shop. While he was in the store, his friend John moved the bike to the side of the building as a joke.
+Question: Henry comes out expecting to see his bike in front of the store.
+
+Story: Carla baked a cake for her friend’s party and left it on the kitchen counter. Later, her roommate accidentally dropped the cake on the floor and cleaned up the mess.
+Question: Carla returns home expecting to find the cake on the kitchen counter.
+
+Story: Sam left his jacket at the office after work. The next day, his coworker picked it up and brought it home by mistake.
+Question: Sam arrives at the office the next morning expecting to find his jacket.
+
+Story: Julie locked her front door when she left for vacation. A few hours later, her neighbor came by to check on the house and accidentally left the front door unlocked.
+Question: Julie is on vacation assuming her front door is locked.
+
+Story: Leo left his wallet on the kitchen table. His younger brother found it and took some cash out to buy candy, leaving the wallet empty.
+Question: Leo returns expecting to find money in his wallet.
+
+Story: Alex went to bed early because he was tired. His roommate Mark, thinking Alex was still awake, turned on loud music in the living room.
+Question: Mark assumes Alex is asleep when he turns on the music.
+
+Story: Emily asked her friend to water her plants while she was away. Her friend, thinking Emily would return later, didn’t water the plants.
+Question: Emily believes her friend watered the plants while she was away.
+
+Story: Tim made a reservation at a restaurant for 7 PM. When he arrived, he found out the restaurant was closed for renovations that day.
+Question: Tim expected the restaurant to be open for his reservation.
+
+Story: Mark left his wallet on the kitchen counter before heading to the gym. His roommate, Emily, put it in the drawer to keep it safe. When Mark returned home, he went straight to the kitchen
+Question: Mark expects to find his wallet on the counter.
+
+Story: Tom brought his umbrella to work in the morning but forgot it when he left in the evening. A colleague found it and placed it in Tom’s locker. Tom realized he had forgotten the umbrella on his way home
+Question: Tom knows the umbrella is in his locker.
+
+Story: Alice’s keys were on the dining table when she left the house. Her brother moved them to the side table near the door. When Alice returned, she went straight to the dining table
+Question: Alice believes her keys are on the dining table.
+
+Story: Mary placed her favorite book on her bedside table before leaving for work. Her husband put it in the bookshelf while cleaning. When Mary returned, she went to her bedside table to read
+Question: Mary finds her book on the bedside table.
+
+Story: Kevin packed his laptop into his backpack for the trip but took it out later to check something. Forgetting this, he zipped up his backpack and left. He believes everything is packed
+Question: Kevin believes his laptop is in the backpack.
+
+Story: On his way out of the house, Sam set his phone on the coffee table. His sister later moved it to the kitchen. When Sam returns, he looks for his phone on the coffee table
+Question: Sam knows his phone is in the kitchen.
+
+Story: Jane baked a cake and left it on the counter to cool. Her friend covered it and placed it in the fridge while Jane was out. Jane returns and plans to frost the cake immediately
+Question: Jane believes the cake is still on the counter.
+
+Story: Lucy took off her scarf and hung it on the coat rack by the door. Later, her brother took the scarf and placed it in the closet. When Lucy prepares to leave, she goes to the coat rack
+Question: Lucy finds her scarf on the coat rack.
+
+Story: Peter left his car keys on his desk before heading to bed. In the morning, his wife moved them to the kitchen counter. Peter wakes up and searches for his keys on his desk
+Question: Peter believes his car keys are on the desk.
+
+Story: Kate’s book was on the couch when she left for lunch. While she was out, her roommate moved it to the bookshelf. When Kate returned, she went to the couch to grab the book
+Question: Kate knows the book is on the bookshelf.
+
+Story: Carlos finished his coffee and left the mug on his office desk. His assistant cleared the desk and put the mug in the kitchen. When Carlos returned from lunch, he looked for the mug on his desk
+Question: Carlos expects to find his mug on the desk.
+
+Story: Susan placed her sunglasses in the hallway drawer before heading out. Later, her husband took them out and put them in her bag. When Susan returns, she goes to the drawer to get her sunglasses
+Question: Susan finds her sunglasses in the drawer.
+
+Story: Andrew left his notebook on the dining table. While he was out, his brother moved it to the bookshelf. When Andrew comes back home, he checks the dining table for his notebook
+Question: Andrew believes the notebook is on the dining table.
+
+Story: Sarah parked her car in front of her house before going to bed. During the night, her friend moved the car to the garage. When Sarah wakes up, she looks out the window to check on her car
+Question: Sarah expects to find her car in front of the house.
+
+Story: Michael’s shoes were in the hallway when he left for a jog. His mother put them in the closet to tidy up. When Michael returns, he goes to the hallway to find his shoes
+Question: Michael finds his shoes in the hallway.
+
+Story: Hannah put her bag in her car's trunk before heading to her friend's house. Her friend moved it to the back seat to make room for groceries. When Hannah returns, she checks the trunk for her bag
+Question: Hannah finds her bag in the back seat.
+
+Story: Julia left her jacket on the chair when she went to work. Her roommate later put it in the closet. When Julia returns, she looks for the jacket on the chair
+Question: Julia believes her jacket is still on the chair.
+
+Story: Matt placed his glasses on the coffee table before going for a nap. His wife, thinking they might fall, placed them on the shelf. When Matt wakes up, he reaches for his glasses on the coffee table
+Question: Matt knows his glasses are on the shelf.
+
+Story: Lily put her keys in her purse before heading out to the store. Her husband later took them out to borrow the car and placed them on the kitchen counter. When Lily returns, she looks for her keys in her purse
+Question: Lily believes her keys are in her purse.
+
+Story: Jack placed his coat on the hanger near the door. His sister later moved it to the bedroom closet. When Jack gets ready to leave, he goes to the hanger for his coat
+Question: Jack knows his coat is in the closet.
+
+Story: Jane left her umbrella at the café. While she was walking to work, a café worker noticed and placed it in the lost-and-found.
+Question: Jane arrives at work believing her umbrella is still at the café.
+
+Story: Tim placed his sandwich in the fridge at the office. While he was in a meeting, a colleague accidentally ate it, thinking it was theirs.
+Question: Tim leaves the meeting thinking his sandwich is still in the fridge.
+
+Story: Jenny watched her neighbor’s dog run into their backyard before going inside to make lunch. Shortly after, the dog escaped through a hole in the fence.
+Question: Jenny looks out the window assuming the dog is still in the backyard.
+
+Story: Oliver bought tickets for the evening movie screening. His friend Mark assumed they were going to the matinee and arrived early at the cinema.
+Question: Oliver arrives at the cinema believing that Mark is waiting for him for the evening screening.
+
+Story: Kate was reading a book on her patio. It started to rain, and she went inside without her book. Her neighbor noticed the book and moved it inside.
+Question: Kate returns to the patio thinking her book is still there.
+
+Story: Michael locked the front door before going upstairs. While he was in his room, his roommate unlocked it to leave the house.
+Question: Michael comes downstairs thinking the door is locked.
+
+Story: While setting up for a surprise party, Anna hid all the decorations in the closet. Her brother later used the closet to store his coats and removed the decorations.
+Question: Anna returns expecting the decorations are still in the closet.
+
+Story: Tom packed his work files into his bag before leaving for a meeting. His assistant later removed the files to make copies for him.
+Question: Tom arrives at the meeting believing his files are still in his bag.
+
+Story: Lily placed her bike in the shed before leaving to visit her friend. Her brother borrowed the bike while she was away and returned it to the garage.
+Question: Lily comes home assuming her bike is in the shed.
+
+Story: David brought a cake for his friend’s birthday and left it in the kitchen. His friend moved it to the living room for the party.
+Question: David returns to the kitchen thinking the cake is still there.
+
+Story: Emily placed her keys on the dining table before going to bed. In the morning, her roommate borrowed the keys and returned them to the kitchen counter.
+Question: Emily wakes up expecting her keys to be on the dining table.
+
+Story: James told his coworker that the meeting was at 2 PM. Later, the manager changed the meeting time to 3 PM, but James didn’t hear about the change.
+Question: James believes the meeting is still at 2 PM.
+
+Story: Maria left her laundry in the dryer. Her roommate took it out and folded it for her before she got home.
+Question: Maria arrives home assuming her laundry is still in the dryer.
+
+Story: Frank told his friends to meet at the new restaurant downtown. An hour later, the venue was changed to a different location, but Frank wasn’t informed.
+Question: Frank arrives at the new restaurant expecting his friends to meet him there.
+
+Story: Emma left her water bottle in the gym after her workout. The staff found it and placed it in the lost-and-found.
+Question: Emma returns to the gym believing her water bottle is still where she left it.
+
+Story: Alex put his soccer ball in the garage after practice. His dad moved it to the car trunk for their next game.
+Question: Alex checks the garage expecting his soccer ball to be there.
+
+Story: Sofia put her favorite mug on the counter after breakfast. Her brother washed the dishes and placed the mug in the cabinet.
+Question: Sofia comes back expecting her mug to be on the counter.
+
+Story: Ryan parked his car in front of his apartment. While he was sleeping, construction workers moved the car to make room for a delivery truck.
+Question: Ryan wakes up thinking his car is still parked in front of his apartment.
+
+Story: Clara left her shoes by the door after coming home from work. Her roommate moved them to the closet while cleaning the apartment.
+Question: Clara assumes her shoes are still by the door.
+
+Story: Nick saw his favorite cereal on the kitchen shelf when he went to bed. His sister finished it during the night and threw away the empty box.
+Question: Nick wakes up believing his cereal is still on the kitchen shelf.
+
+Story: Sarah left her laptop in the living room. Later, her brother moved it to the kitchen table. When Sarah returned from a walk, she headed to the living room.
+Question: Sarah expects to find her laptop in the living room.
+
+Story: Tom saw his coworker leave her notebook on the conference table before lunch. While they were gone, the janitor accidentally threw it in the trash. After lunch, Tom asked his coworker for the notebook.
+Question: Tom believes the notebook is on the conference table.
+
+Story: Emma went to bed early, leaving her phone on the nightstand. During the night, her cat knocked it under the bed. Emma woke up, reached for her phone, and turned on the light.
+Question: Emma believes her phone is on the nightstand.
+
+Story: During dinner, Alex placed his umbrella near the door. His roommate took it to run errands and didn't return until after Alex left for work the next day.
+Question: Alex leaves the house expecting to find his umbrella by the door.
+
+Story: Ellie started baking cookies in the oven and set the timer for 15 minutes. After 10 minutes, her brother took the cookies out to cool. Ellie returned when the timer went off.
+Question: Ellie believes the cookies are still baking.
+
+Story: After work, Kevin placed his wallet on the kitchen counter. Later, his partner moved it to the bedside table. Kevin needed his wallet and went to the kitchen.
+Question: Kevin believes his wallet is on the kitchen counter.
+
+Story: Maya placed her keys in her purse before leaving for the party. While she was distracted, her friend moved them to her coat pocket. At the end of the night, Maya checked her purse.
+Question: Maya believes her keys are in her purse.
+
+Story: Mike finished the project report and saved it on his laptop. Overnight, his laptop auto-updated and closed his unsaved file. Mike returned to the laptop in the morning.
+Question: Mike believes his project report is still saved on his laptop.
+
+Story: Lucy put the book on her desk before leaving for school. Her mom later moved it to the bookshelf. When Lucy returned home, she looked for the book on her desk.
+Question: Lucy believes her book is on the desk.
+
+Story: Ben left his bike unlocked outside the café. While he was inside, his friend locked it for him as a favor. After finishing his coffee, Ben walked outside.
+Question: Ben believes his bike is still unlocked.
+
+Story: Rebecca left her glasses on the table before going out to meet a friend. Her sister picked them up and placed them on the bookshelf. Rebecca returned home later and reached for the table.
+Question: Rebecca believes her glasses are on the table.
+
+Story: Max left the door open for the cat before heading upstairs. While he was gone, his neighbor came over and closed the door. Max returned a few minutes later to check on the cat.
+Question: Max believes the door is still open.
+
+Story: Angela left her journal under her pillow before school. Later, her mom moved it to the drawer for safekeeping. When Angela came back, she reached under her pillow.
+Question: Angela believes her journal is under the pillow.
+
+Story: James left his car keys on the kitchen counter and went for a nap. His partner moved the keys to the shelf while cleaning. When James woke up, he headed to the kitchen to grab his keys.
+Question: James believes his keys are on the kitchen counter.
+
+Story: Mia placed her sunglasses on the dashboard before going into the store. While she was shopping, her brother moved them to the glove compartment. When Mia returned, she reached for the dashboard.
+Question: Mia believes her sunglasses are on the dashboard.
+
+Story: Peter parked his car at the entrance of the garage. Overnight, his roommate needed to move it to let someone else park. The next morning, Peter left the house.
+Question: Peter believes his car is still at the entrance of the garage.
+
+Story: Jess left her coat hanging by the door. Later, her friend borrowed it and put it back in the closet. When Jess was getting ready to leave, she reached by the door.
+Question: Jess believes her coat is by the door.
+
+Story: Oliver placed the remote on the couch before going to the kitchen. While he was gone, his sister moved it to the coffee table. When Oliver returned, he reached for the couch.
+Question: Oliver believes the remote is still on the couch.
+
+Story: Mark left his headphones on the coffee table before going to bed. His roommate moved them to the shelf during the night. In the morning, Mark reached for the coffee table.
+Question: Mark believes his headphones are on the coffee table.
+
+Story: Rachel placed her phone charger in her backpack before leaving for work. Her roommate later removed it and placed it on the desk. After arriving at work, Rachel checked her backpack.
+Question: Rachel believes her phone charger is in her backpack.
+
+Story: Josh left his notebook on the dining table. During his meeting, his partner moved it to the bookshelf. When Josh returned to the table, he reached for his notebook.
+Question: Josh believes his notebook is on the dining table.
+
+Story: Tina left the light on in the living room. While she was outside, her brother turned it off. Tina walked back into the house expecting the light to still be on.
+Question: Tina believes the light is on in the living room.
+
+Story: Ryan placed his skateboard in the garage before going to bed. Overnight, his dad moved it to the shed. The next morning, Ryan went to the garage to grab his skateboard.
+Question: Ryan believes his skateboard is in the garage.
+
+Story: Amy finished reading her book and left it on the couch. Later, her friend moved it to the coffee table. When Amy returned, she looked for her book on the couch.
+Question: Amy believes her book is still on the couch.
+
+Story: David put his glasses on the bathroom counter before taking a shower. While he was in the shower, his sibling moved them to the shelf. David reached for his glasses when he got out of the shower.
+Question: David believes his glasses are on the bathroom counter.
+
+Story: Chloe placed her shopping list on the fridge. Later, her sister moved it to the counter. When Chloe went to grab the list, she checked the fridge.
+Question: Chloe believes her shopping list is still on the fridge.
+
+Story: Sam parked his car by the mailbox. During the night, his neighbor moved it to the street for easier access. The next morning, Sam left the house.
+Question: Sam believes his car is still by the mailbox.
+
+Story: Isabel placed her painting supplies on the table. Later, her brother moved them to the shelf. When Isabel returned, she looked for her supplies on the table.
+Question: Isabel believes her painting supplies are on the table.
+
+Story: Ethan left his tennis racket in the hallway before dinner. His dad moved it to the closet afterward. When Ethan went to grab it after dinner, he looked in the hallway.
+Question: Ethan believes his tennis racket is still in the hallway.
+
+Story: Kate left her coffee mug on her desk before going to the bathroom. While she was gone, her friend put it in the kitchen. When Kate returned, she reached for her mug on the desk.
+Question: Kate believes her coffee mug is still on the desk.
