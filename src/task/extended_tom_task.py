@@ -7,11 +7,11 @@ class ExtendedTomLocGPT4(Dataset):
         context_template = "{instruction}\nStory: {story}\nQuestion: {question}\nAnswer: {answer}"
 
         # Import Photo Stories and Questions
-        photo_path = 'dataset/prompt/extended-tomloc/tomloc_negative.txt'
+        photo_path = 'dataset/localizer/extended-tomloc/tomloc_negative.txt'
         photograph_stories, photograph_questions = self.extract_stories_and_questions(photo_path)
 
         # Import Belief Stories and Questions
-        belief_path = 'dataset/prompt/extended-tomloc/tomloc_positive.txt'
+        belief_path = 'dataset/localizer/extended-tomloc/tomloc_positive.txt'
         belief_stories, belief_questions = self.extract_stories_and_questions(belief_path)
 
         # Set a fixed seed for reproducibility
@@ -37,6 +37,7 @@ class ExtendedTomLocGPT4(Dataset):
             )
             for story, question in zip(photograph_stories, photograph_questions)
         ]
+        
         # 100 Photo Stories vs 95 Belief Stories
         self.negative = self.negative[:95]
    
