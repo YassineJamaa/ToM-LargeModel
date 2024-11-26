@@ -4,7 +4,7 @@ import pandas as pd
 
 class LangLocDataset(Dataset):
     def __init__(self):
-        dirpath = "dataset/prompt/langloc"
+        dirpath = "dataset/localizer/langloc"
         paths = glob(f"{dirpath}/*.csv")
         vocab = set()
 

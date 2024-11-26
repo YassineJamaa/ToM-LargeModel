@@ -19,11 +19,11 @@ class ToMLocDataset(Dataset):
     def __init__(self):
         instruction = "In this experiment, you will read a series of sentences and then answer True/False questions about them. Press button 1 to answer 'true' and button 2 to answer 'false'."
         context_template = "{instruction}\nStory: {story}\nQuestion: {question}\nAnswer: {answer}"
-        belief_stories = [read_story(f"dataset/prompt/tomloc/{idx}b_story.txt") for idx in range(1, 11)]
-        photograph_stories = [read_story(f"dataset/prompt/tomloc/{idx}p_story.txt") for idx in range(1, 11)]
+        belief_stories = [read_story(f"dataset/localizer/tomloc/{idx}b_story.txt") for idx in range(1, 11)]
+        photograph_stories = [read_story(f"dataset/localizer/tomloc/{idx}p_story.txt") for idx in range(1, 11)]
 
-        belief_question = [read_question(f"dataset/prompt/tomloc/{idx}b_question.txt") for idx in range(1, 11)]
-        photograph_question = [read_question(f"dataset/prompt/tomloc/{idx}p_question.txt") for idx in range(1, 11)]
+        belief_question = [read_question(f"dataset/localizer/tomloc/{idx}b_question.txt") for idx in range(1, 11)]
+        photograph_question = [read_question(f"dataset/localizer/tomloc/{idx}p_question.txt") for idx in range(1, 11)]
 
         # Set a fixed seed for reproducibility
         rng = np.random.default_rng(seed=42)
