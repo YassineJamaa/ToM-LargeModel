@@ -14,6 +14,7 @@ from src import (ImportLLM,
                  LayersUnitsLLM, 
                  LocImportantUnits,
                  ToMLocDataset,
+                 ExtendedTomLocGPT4,
                  AssessBenchmark,)
 
 from benchmark import BenchmarkToMi, BenchmarkOpenToM
@@ -47,10 +48,26 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Run experiments with language models.")
     parser.add_argument("--model", type=str, required=True, help="Model checkpoint path.")
     parser.add_argument("--bench_list", nargs='+', default=["OpenToM"], help="Benchmark that you would go into")
-    parser.add_argument("--opentom", type=str, default=None, help="Choose between simple or complex story")
     parser.add_argument("--pct", type=float, required=True, help="Top percentage for ablation.")
-    parser.add_argument("--subset", type=int, default=None, help="Subset size for benchmarks (default: 10).")
+    parser.add_argument("--subset", type=int, default=5, help="Subset size for benchmarks (default: 10).")
+    parser.add_argument("--batch", type=int, default=20, help="Batch size (default: 10).")
+    parser.add_argument("--extended_loc", type=str, default=False, help="Choose between the classical localizer or extended one.")
     return parser.parse_args()
+
+def delete_checkpoint_file(file_path):
+    """
+    Deletes the specified checkpoint file if it exists.
+    
+    Args:
+        file_path (str): Path to the file to be deleted.
+    """
+    try:
+        os.remove(file_path)
+        print(f"Checkpoint file {file_path} has been deleted.")
+    except FileNotFoundError:
+        print(f"Checkpoint file {file_path} not found for deletion.")
+    except Exception as e:
+        print(f"An error occurred while deleting the file {file_path}: {e}")
 
 def main():
     # Parse command-line arguments
@@ -64,51 +81,100 @@ def main():
     pct = args.pct
     subset = args.subset
     benchmark_list = args.bench_list
-    story_opentom = args.opentom
+    batch_size = args.batch
+    extended_loc = args.extended_loc
 
     # Extract the model name from the checkpoint path
     model_name = checkpoint.split("/")[-1]
 
     # Load model and tokenizer
     model, tokenizer = load_model_and_tokenizer(checkpoint, cache_dir, hf_access_token, device)
-
-    # Assess OpenToM Benchmark
-    tom_data = ToMLocDataset()
     llm = ImportLLM(model, tokenizer)
-    units = LayersUnitsLLM(llm, tom_data)
-    loc_units = LocImportantUnits(checkpoint, units.data_activation)
+
+    # Get the right localizer
+    if extended_loc:
+        # Extended Localizer
+        localizer_name = "ExtendedTomLocGPT4"
+        
+        # Path to the extended localizer checkpoint
+        path_extended_checkpoint = "dataset/save_checkpoints/extended_tomloc.pt"
+
+        # Load the data activation if it exists
+        if os.path.exists(path_extended_checkpoint):
+            data_activation = torch.load(path_extended_checkpoint, weights_only=True)
+        else:
+            extended_tom_data = ExtendedTomLocGPT4()
+            units = LayersUnitsLLM(llm, extended_tom_data)
+            data_activation = units.data_activation
+
+            # Save the data in this folder and ensure the path directory exists
+            save_dir_extended = os.path.dirname(path_extended_checkpoint)
+            os.makedirs(save_dir_extended, exist_ok=True)
+            torch.save(data_activation, path_extended_checkpoint)
+
+        # Localize Important Units
+        loc_units = LocImportantUnits(checkpoint, data_activation)
+    else:
+        # Classic Localizer
+        localizer_name = "ClassicTomLoc"
+        tom_data = ToMLocDataset()
+        units = LayersUnitsLLM(llm, tom_data)
+
+        # Localize Important Units
+        loc_units = LocImportantUnits(checkpoint, units.data_activation)
 
     # Output OpenToM
-    output_dir = os.path.join(".", "Output", model_name)
+    output_dir = os.path.join(".", "Output", localizer_name, model_name)
     ensure_directory_exists(output_dir)
 
     # Create a checkpoint for large Benchmark
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    checkpoint_dir = os.path.join(current_dir, "checkpoint", model_name)
+    checkpoint_dir = os.path.join(current_dir, "checkpoint", localizer_name, model_name)
     ensure_directory_exists(checkpoint_dir)
 
-    # Assessment Class
-    bn_assess = AssessBenchmark(llm, loc_units)
+    # Assessment Instantiation
+    benchmark_assess = AssessBenchmark(llm, loc_units)
 
-    # BENCHMARK -> OpenToM
+    # BENCHMARK Assessment
     if "OpenToM" in benchmark_list:
-        if story_opentom:
-            checkpoint_file_opentom = f"{checkpoint_dir}/tmp_Variant_OpenToM_{model_name.replace('.', '_')}_{str(int(pct*100)).replace(".", "_")}.csv"
-            output_path_opentom = os.path.join(output_dir, f"Variant_OpenToM_{model_name.replace('.', '_')}-pct-{str(int(pct*100)).replace(".", "_")}.csv")
-        else:
-            checkpoint_file_opentom = f"{checkpoint_dir}/tmp_OpenToM{model_name.replace('.', '_')}_{str(int(pct*100)).replace(".", "_")}.csv"
-            output_path_opentom = os.path.join(output_dir, f"OpenToM_{model_name.replace('.', '_')}-pct-{str(int(pct*100)).replace(".", "_")}.csv")
-        # Assess ToMi Benchmark
-        bench_open = BenchmarkOpenToM(story=story_opentom, order="first_order", subset=subset)
-        opentom_res = bn_assess.experiment(bench_open, check_path=checkpoint_file_opentom, batch_size=10, pct=pct)
+        checkpoint_file_opentom = f"{checkpoint_dir}/tmp_OpenToM{model_name.replace('.', '_')}_{str(int(pct*100)).replace(".", "_")}.csv"
+        output_path_opentom = os.path.join(output_dir, f"OpenToM_{model_name.replace('.', '_')}-pct-{str(int(pct*100)).replace(".", "_")}.csv")
+        
+        # Assess OpenToM Benchmark
+        bench_open = BenchmarkOpenToM(order="first_order", subset=subset)
+        opentom_res = benchmark_assess.experiment(bench_open, check_path=checkpoint_file_opentom, batch_size=batch_size, pct=pct)
+        
+        # Save results to output directory
         opentom_res.to_csv(output_path_opentom, index=False)
         print(f"Results saved to {output_path_opentom}")
 
+        # Call the function to delete the checkpoint file
+        delete_checkpoint_file(checkpoint_file_opentom)
+    
+    if "Variant_OpenToM" in benchmark_list:
+        checkpoint_file_var_opentom = f"{checkpoint_dir}/tmp_OpenToM{model_name.replace('.', '_')}_{str(int(pct*100)).replace(".", "_")}.csv"
+        output_path_var_opentom = os.path.join(output_dir, f"Variant_OpenToM_{model_name.replace('.', '_')}-pct-{str(int(pct*100)).replace(".", "_")}.csv")
+        
+        # Assess simplifier version of OpenToM Benchmark
+        bench_open = BenchmarkOpenToM(story="plot", order="first_order", subset=subset)
+        opentom_res = benchmark_assess.experiment(bench_open, check_path=checkpoint_file_var_opentom, batch_size=batch_size, pct=pct)
+
+        # Save results to output directory
+        opentom_res.to_csv(output_path_var_opentom, index=False)
+        print(f"Results saved to {output_path_var_opentom}")
+
+        # Call the function to delete the checkpoint file
+        delete_checkpoint_file(checkpoint_file_var_opentom)
+
     # Output ToMi results
     if "ToMi" in benchmark_list:
-        bench_tomi = BenchmarkToMi(subset=subset)
-        tomi_res = bn_assess.experiment(bench_tomi, pct=pct)
         output_path_tomi = os.path.join(output_dir, f"ToMi_{model_name.replace('.', '_')}-pct-{int(pct*100)}.csv")
+
+        # Assess ToMi Benchmark
+        bench_tomi = BenchmarkToMi(subset=subset)
+        tomi_res = benchmark_assess.experiment(bench_tomi, pct=pct, batch_size=batch_size)
+
+        # Save results to output directory
         tomi_res.to_csv(output_path_tomi, index=False)
         print(f"Results saved to {output_path_tomi}")
 
