@@ -49,8 +49,8 @@ def parse_arguments():
     parser.add_argument("--model", type=str, required=True, help="Model checkpoint path.")
     parser.add_argument("--bench_list", nargs='+', default=["OpenToM"], help="Benchmark that you would go into")
     parser.add_argument("--pct", type=float, required=True, help="Top percentage for ablation.")
-    parser.add_argument("--subset", type=int, default=5, help="Subset size for benchmarks (default: 10).")
-    parser.add_argument("--batch", type=int, default=20, help="Batch size (default: 10).")
+    parser.add_argument("--subset", type=int, default=None, help="Subset size for benchmarks (default: 10).")
+    parser.add_argument("--batch", type=int, default=10, help="Batch size (default: 10).")
     parser.add_argument("--extended_loc", type=str, default=False, help="Choose between the classical localizer or extended one.")
     return parser.parse_args()
 
@@ -95,33 +95,17 @@ def main():
     if extended_loc:
         # Extended Localizer
         localizer_name = "ExtendedTomLocGPT4"
-        
-        # Path to the extended localizer checkpoint
-        path_extended_checkpoint = "dataset/save_checkpoints/extended_tomloc.pt"
+        extended_tom_data = ExtendedTomLocGPT4()
+        units = LayersUnitsLLM(llm, extended_tom_data)
 
-        # Load the data activation if it exists
-        if os.path.exists(path_extended_checkpoint):
-            data_activation = torch.load(path_extended_checkpoint, weights_only=True)
-        else:
-            extended_tom_data = ExtendedTomLocGPT4()
-            units = LayersUnitsLLM(llm, extended_tom_data)
-            data_activation = units.data_activation
-
-            # Save the data in this folder and ensure the path directory exists
-            save_dir_extended = os.path.dirname(path_extended_checkpoint)
-            os.makedirs(save_dir_extended, exist_ok=True)
-            torch.save(data_activation, path_extended_checkpoint)
-
-        # Localize Important Units
-        loc_units = LocImportantUnits(checkpoint, data_activation)
     else:
         # Classic Localizer
         localizer_name = "ClassicTomLoc"
         tom_data = ToMLocDataset()
         units = LayersUnitsLLM(llm, tom_data)
 
-        # Localize Important Units
-        loc_units = LocImportantUnits(checkpoint, units.data_activation)
+    # Localize Important Units
+    loc_units = LocImportantUnits(checkpoint, units.data_activation)
 
     # Output OpenToM
     output_dir = os.path.join(".", "Output", localizer_name, model_name)
