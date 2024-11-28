@@ -84,6 +84,12 @@ def main():
     batch_size = args.batch
     extended_loc = args.extended_loc
 
+    # percentage folder
+    if (pct * 100).is_integer():
+        pct_folder = f"top-{pct*100:.0f}%"  # No decimal places
+    else:
+        pct_folder = f"top-{pct*100:.1f}%"   # One decimal place
+
     # Extract the model name from the checkpoint path
     model_name = checkpoint.split("/")[-1]
 
@@ -108,12 +114,12 @@ def main():
     loc_units = LocImportantUnits(checkpoint, units.data_activation)
 
     # Output OpenToM
-    output_dir = os.path.join(".", "Output", localizer_name, model_name)
+    output_dir = os.path.join(".", "Output", localizer_name, pct_folder, model_name)
     ensure_directory_exists(output_dir)
 
     # Create a checkpoint for large Benchmark
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    checkpoint_dir = os.path.join(current_dir, "checkpoint", localizer_name, model_name)
+    checkpoint_dir = os.path.join(current_dir, "checkpoint", localizer_name, pct_folder, model_name)
     ensure_directory_exists(checkpoint_dir)
 
     # Assessment Instantiation
