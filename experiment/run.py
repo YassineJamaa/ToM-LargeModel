@@ -17,7 +17,7 @@ from src import (ImportLLM,
                  ExtendedTomLocGPT4,
                  AssessBenchmark,)
 
-from benchmark import BenchmarkToMi, BenchmarkOpenToM
+from benchmark import BenchmarkToMi, BenchmarkOpenToM, BenchmarkFanToM
 
 def setup_environment():
     """Load environment variables and configure device."""
@@ -120,6 +120,38 @@ def main():
     benchmark_assess = AssessBenchmark(llm, loc_units)
 
     # BENCHMARK Assessment
+    # BENCHMARK Assessment
+    if "FanToM" in benchmark_list:
+        # FanToM Benchmark
+        checkpoint_file_fantom = f"{checkpoint_dir}/tmp_FanToM{model_name.replace('.', '_')}_{str(int(pct*100)).replace(".", "_")}.csv"
+        output_path_fantom = os.path.join(output_dir, f"FanToM_{model_name.replace('.', '_')}-pct-{str(int(pct*100)).replace(".", "_")}.csv")
+        
+        # Assess FanToM Benchmark
+        bench_fantom = BenchmarkFanToM(subset=subset)
+        fantom_res = benchmark_assess.experiment(bench_fantom, check_path=checkpoint_file_fantom, batch_size=batch_size, pct=pct)
+        
+        # Save results to output directory
+        fantom_res.to_csv(output_path_fantom, index=False)
+        print(f"Results saved to {output_path_fantom}")
+
+        # Call the function to delete the checkpoint file
+        delete_checkpoint_file(checkpoint_file_fantom)
+    
+    if "Variant_FanToM" in benchmark_list:
+        checkpoint_file_var_fantom = f"{checkpoint_dir}/tmp_Variant_FanToM{model_name.replace('.', '_')}_{str(int(pct*100)).replace(".", "_")}.csv"
+        output_path_var_fantom = os.path.join(output_dir, f"Variant_FanToM_{model_name.replace('.', '_')}-pct-{str(int(pct*100)).replace(".", "_")}.csv")
+        
+        # Assess simplifier version of FanToM Benchmark
+        bench_fantom = BenchmarkFanToM(is_full=False, subset=subset)
+        fantom_res = benchmark_assess.experiment(bench_fantom, check_path=checkpoint_file_var_fantom, batch_size=batch_size, pct=pct)
+
+        # Save results to output directory
+        fantom_res.to_csv(output_path_var_fantom, index=False)
+        print(f"Results saved to {output_path_var_fantom}")
+
+        # Call the function to delete the checkpoint file
+        delete_checkpoint_file(checkpoint_file_var_fantom)
+
     if "OpenToM" in benchmark_list:
         checkpoint_file_opentom = f"{checkpoint_dir}/tmp_OpenToM{model_name.replace('.', '_')}_{str(int(pct*100)).replace(".", "_")}.csv"
         output_path_opentom = os.path.join(output_dir, f"OpenToM_{model_name.replace('.', '_')}-pct-{str(int(pct*100)).replace(".", "_")}.csv")
