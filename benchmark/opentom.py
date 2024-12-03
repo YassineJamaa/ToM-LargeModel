@@ -35,12 +35,19 @@ class BenchmarkOpenToM(BenchmarkBaseline):
                         "\n".join([f"- {cand}" for cand in row["cands"]]) +
                         "\nAnswer:", axis=1)
         
+        # Remove the two rows with incorrect values
+        df.drop([4884, 4904], inplace=True)
+
+        # Keep only False Belief Stories
+        df = df[~df["observed"]].copy().reset_index(drop=True)
+
         if (order is not None):
             df = df[df["qOrder"]==order]
             df.reset_index(drop=True, inplace=True)
 
         if (subset is not None) and isinstance(subset, int) and (subset > 0) and (subset < len(df)):
             df = df.iloc[:subset]
+    
         return df  
 
     def preprocess(self):
