@@ -17,4 +17,10 @@ class BenchmarkBaseline(Dataset):
             ]
         })
     
+    def __len__(self):
+        """
+        Returns the total number of samples in the dataset.
+        """
+        return len(self.data)
+    
     
