@@ -15,9 +15,12 @@ from src import (ImportLLM,
                  LocImportantUnits,
                  ToMLocDataset,
                  ExtendedTomLocGPT4,
-                 AssessBenchmark,)
+                 AssessBenchmark,
+                 AverageTaskStimuli,
+                 ZeroingAblation,
+                 MeanImputation)
 
-from benchmark import BenchmarkToMi, BenchmarkOpenToM, BenchmarkFanToM
+from benchmark import BenchmarkToMi, BenchmarkOpenToM, BenchmarkFanToM, BenchmarkBaseline
 
 def setup_environment():
     """Load environment variables and configure device."""
@@ -69,12 +72,28 @@ def delete_checkpoint_file(file_path):
     except Exception as e:
         print(f"An error occurred while deleting the file {file_path}: {e}")
 
+def ablation_task(llm:ImportLLM, 
+                  bench: BenchmarkBaseline, 
+                  loc_units: LocImportantUnits, 
+                  pct: float, 
+                  batch_size: int,
+                  check_path: Optional[str] = None,
+                  imput: Optional[str] = None):
+    if imput is None:
+        ablat = ZeroingAblation()
+    elif imput == "mean":
+        avg = AverageTaskStimuli(bench, llm)
+        ablat = MeanImputation(avg.avg_activation)
+
+    assess = AssessBenchmark(llm, loc_units, ablat)
+    return assess.experiment(bench, pct=pct, batch_size=batch_size, check_path=check_path)
+
 def main():
     # Parse command-line arguments
     args = parse_arguments()
 
     # Set up the environment
-    hf_access_token, cache_dir, device = setup_environment()
+    device = setup_environment()
 
     # Extract arguments
     checkpoint = args.model
@@ -83,6 +102,15 @@ def main():
     benchmark_list = args.bench_list
     batch_size = args.batch
     extended_loc = args.extended_loc
+    imput = args.imput
+
+    # Imputation Name
+    if imput is None:
+        imput_name = "zeroing"
+    elif imput == "mean":
+        imput_name = "mean_imput"
+    else:
+        raise ValueError(f"Invalid imput value: {imput}. Accepted values are None or 'mean'.")
 
     # percentage folder
     if (pct * 100).is_integer():
@@ -93,8 +121,8 @@ def main():
     # Extract the model name from the checkpoint path
     model_name = checkpoint.split("/")[-1]
 
-    # Load model and tokenizer
-    model, tokenizer = load_model_and_tokenizer(checkpoint, cache_dir, hf_access_token, device)
+    # Load model and tokenizer and Import LLM
+    model, tokenizer = load_model_and_tokenizer(checkpoint, device)
     llm = ImportLLM(model, tokenizer)
 
     # Get the right localizer
@@ -122,19 +150,20 @@ def main():
     checkpoint_dir = os.path.join(current_dir, "checkpoint", localizer_name, pct_folder, model_name)
     ensure_directory_exists(checkpoint_dir)
 
-    # Assessment Instantiation
-    benchmark_assess = AssessBenchmark(llm, loc_units)
-
-    # BENCHMARK Assessment
     # BENCHMARK Assessment
     if "FanToM" in benchmark_list:
         # FanToM Benchmark
-        checkpoint_file_fantom = f"{checkpoint_dir}/tmp_FanToM{model_name.replace('.', '_')}_{str(int(pct*100)).replace(".", "_")}.csv"
-        output_path_fantom = os.path.join(output_dir, f"FanToM_{model_name.replace('.', '_')}-pct-{str(int(pct*100)).replace(".", "_")}.csv")
+        checkpoint_file_fantom = f"{checkpoint_dir}/tmp_FanToM_{model_name.replace('.', '_')}_{imput_name}.csv"
+        output_path_fantom = os.path.join(output_dir, f"FanToM_{model_name.replace('.', '_')}_{imput_name}.csv")
         
         # Assess FanToM Benchmark
         bench_fantom = BenchmarkFanToM(subset=subset)
-        fantom_res = benchmark_assess.experiment(bench_fantom, check_path=checkpoint_file_fantom, batch_size=batch_size, pct=pct)
+        fantom_res = ablation_task(llm=llm,
+                                   loc_units=loc_units,
+                                   bench=bench_fantom, 
+                                   check_path=checkpoint_file_fantom, 
+                                   batch_size=batch_size, 
+                                   pct=pct)
         
         # Save results to output directory
         fantom_res.to_csv(output_path_fantom, index=False)
@@ -144,12 +173,17 @@ def main():
         delete_checkpoint_file(checkpoint_file_fantom)
     
     if "Variant_FanToM" in benchmark_list:
-        checkpoint_file_var_fantom = f"{checkpoint_dir}/tmp_Variant_FanToM{model_name.replace('.', '_')}_{str(int(pct*100)).replace(".", "_")}.csv"
-        output_path_var_fantom = os.path.join(output_dir, f"Variant_FanToM_{model_name.replace('.', '_')}-pct-{str(int(pct*100)).replace(".", "_")}.csv")
+        checkpoint_file_var_fantom = f"{checkpoint_dir}/tmp_Variant_FanToM_{model_name.replace('.', '_')}_{imput_name}.csv"
+        output_path_var_fantom = os.path.join(output_dir, f"Variant_FanToM_{model_name.replace('.', '_')}_{imput_name}.csv")
         
         # Assess simplifier version of FanToM Benchmark
         bench_fantom = BenchmarkFanToM(is_full=False, subset=subset)
-        fantom_res = benchmark_assess.experiment(bench_fantom, check_path=checkpoint_file_var_fantom, batch_size=batch_size, pct=pct)
+        fantom_res = ablation_task(llm=llm,
+                                   loc_units=loc_units,
+                                   bench=bench_fantom, 
+                                   check_path=checkpoint_file_var_fantom, 
+                                   batch_size=batch_size, 
+                                   pct=pct)
 
         # Save results to output directory
         fantom_res.to_csv(output_path_var_fantom, index=False)
@@ -159,12 +193,18 @@ def main():
         delete_checkpoint_file(checkpoint_file_var_fantom)
 
     if "OpenToM" in benchmark_list:
-        checkpoint_file_opentom = f"{checkpoint_dir}/tmp_OpenToM{model_name.replace('.', '_')}_{str(int(pct*100)).replace(".", "_")}.csv"
-        output_path_opentom = os.path.join(output_dir, f"OpenToM_{model_name.replace('.', '_')}-pct-{str(int(pct*100)).replace(".", "_")}.csv")
+        # OpenToM Benchmark
+        checkpoint_file_opentom = f"{checkpoint_dir}/tmp_OpenToM_{model_name.replace('.', '_')}_{imput_name}.csv"
+        output_path_opentom = os.path.join(output_dir, f"OpenToM_{model_name.replace('.', '_')}_{imput_name}.csv")
         
         # Assess OpenToM Benchmark
         bench_open = BenchmarkOpenToM(order="first_order", subset=subset)
-        opentom_res = benchmark_assess.experiment(bench_open, check_path=checkpoint_file_opentom, batch_size=batch_size, pct=pct)
+        opentom_res = ablation_task(llm=llm,
+                                   loc_units=loc_units,
+                                   bench=bench_open, 
+                                   check_path=checkpoint_file_opentom, 
+                                   batch_size=batch_size, 
+                                   pct=pct)
         
         # Save results to output directory
         opentom_res.to_csv(output_path_opentom, index=False)
@@ -174,12 +214,17 @@ def main():
         delete_checkpoint_file(checkpoint_file_opentom)
     
     if "Variant_OpenToM" in benchmark_list:
-        checkpoint_file_var_opentom = f"{checkpoint_dir}/tmp_OpenToM{model_name.replace('.', '_')}_{str(int(pct*100)).replace(".", "_")}.csv"
-        output_path_var_opentom = os.path.join(output_dir, f"Variant_OpenToM_{model_name.replace('.', '_')}-pct-{str(int(pct*100)).replace(".", "_")}.csv")
+        checkpoint_file_var_opentom = f"{checkpoint_dir}/tmp_Variant_OpenToM_{model_name.replace('.', '_')}_{imput_name}.csv"
+        output_path_var_opentom = os.path.join(output_dir, f"Variant_OpenToM_{model_name.replace('.', '_')}_{imput_name}.csv")
         
         # Assess simplifier version of OpenToM Benchmark
         bench_open = BenchmarkOpenToM(story="plot", order="first_order", subset=subset)
-        opentom_res = benchmark_assess.experiment(bench_open, check_path=checkpoint_file_var_opentom, batch_size=batch_size, pct=pct)
+        opentom_res = ablation_task(llm=llm,
+                                   loc_units=loc_units,
+                                   bench=bench_open, 
+                                   check_path=checkpoint_file_var_opentom, 
+                                   batch_size=batch_size, 
+                                   pct=pct)
 
         # Save results to output directory
         opentom_res.to_csv(output_path_var_opentom, index=False)
@@ -190,16 +235,19 @@ def main():
 
     # Output ToMi results
     if "ToMi" in benchmark_list:
-        output_path_tomi = os.path.join(output_dir, f"ToMi_{model_name.replace('.', '_')}-pct-{int(pct*100)}.csv")
+        output_path_tomi = os.path.join(output_dir, f"ToMi_{imput_name}.csv")
 
         # Assess ToMi Benchmark
         bench_tomi = BenchmarkToMi(subset=subset)
-        tomi_res = benchmark_assess.experiment(bench_tomi, pct=pct, batch_size=batch_size)
+        tomi_res = ablation_task(llm=llm,
+                                   loc_units=loc_units,
+                                   bench=bench_tomi, 
+                                   batch_size=batch_size, 
+                                   pct=pct)
 
         # Save results to output directory
         tomi_res.to_csv(output_path_tomi, index=False)
         print(f"Results saved to {output_path_tomi}")
-
 
 if __name__ == "__main__":
     main()
