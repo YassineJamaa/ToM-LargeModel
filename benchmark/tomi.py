@@ -29,7 +29,7 @@ class BenchmarkToMi(BenchmarkBaseline):
         )
 
         # Keep only the False Belief Stories
-        df = df[~df["falseTrueBelief"]].copy()
+        df = df[~df["falseTrueBelief"]].copy().reset_index(drop=True)
 
         if (subset is not None) and isinstance(subset, int) and (subset > 0) and (subset < len(df)):
             df = df.iloc[:subset]
