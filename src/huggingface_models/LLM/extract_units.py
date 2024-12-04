@@ -46,7 +46,7 @@ class LayersUnitsLLM:
     def final_tokens_layers(self, activation):
         return activation[:, -1, :, :]
 
-    def extract_layer_units(self, idx, group_name="positive", method="average"):
+    def extract_layer_units(self, idx, group_name="positive"):
         self.clear_hooks()
         self.llm.model.eval()
 
