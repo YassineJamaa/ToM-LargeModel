@@ -66,7 +66,7 @@ def mark_built(path, version_string="1.0"):
         if version_string:
             write.write('\n' + version_string)
 
-def download_and_check_hash(url, filename, expected_hash, version, directory='data', chunk_size=1024*1024*10):
+def download_and_check_hash(url, filename, expected_hash, version, directory='dataset/benchmarks', chunk_size=1024*1024*10):
 
     # Download the file
     response = requests.get(url, stream=True)
@@ -101,7 +101,7 @@ def download_and_check_hash(url, filename, expected_hash, version, directory='da
 
     return file_path
 
-def build_data(resource, directory='data'):
+def build_data(resource, directory='dataset/benchmarks'):
     # check whether the file already exists
     if resource.filename.endswith('.tar.gz'):
         resource_dir = os.path.splitext(os.path.splitext(os.path.basename(resource.filename))[0])[0]
@@ -186,7 +186,7 @@ class BenchmarkFanToM(BenchmarkBaseline):
 
         df["prompt"] = df.apply(
             lambda row: (
-                f"{context_template.format(characters=format_characters(row['characters']))}\nStory:\n{row['full_context']}\nQuestion: {row['question']}\nOptions:\n" +
+                f"{context_template.format(characters=format_characters(row['characters']))}\nStory:\n{row[self.story]}\nQuestion: {row['question']}\nOptions:\n" +
                 "\n".join([f"- {cand}" for cand in row["cands"]]) +
                 "\nAnswer:"
             ),
