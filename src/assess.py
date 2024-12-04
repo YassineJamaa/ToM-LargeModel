@@ -9,6 +9,7 @@ from typing import Optional
 from collections import OrderedDict
 import os
 from itertools import islice
+from src.ablation import ZeroingAblation
 
 def compute_cand_score(row):
     logits = row['log_sm']
@@ -22,31 +23,11 @@ def compute_cand_score(row):
 class AssessBenchmark:
     def __init__(self,
                  llm: ImportLLM,
-                 loc_units: LocImportantUnits):
+                 loc_units: LocImportantUnits,
+                 ablation: ZeroingAblation):
         self.llm = llm
         self.loc_units = loc_units
-
-    def clear_hooks(self):
-        """Clears all registered forward hooks in the model layers."""
-        for layer in self.llm.model.model.layers:
-            layer._forward_hooks.clear()
-
-    def get_hook_ablate(self, idx, mask):
-        """
-        Defines a hook function to ablate specific units based on a mask.
-
-        Args:
-            idx (int): Layer index.
-            mask (torch.Tensor): Binary mask for ablation at the given layer.
-
-        Returns:
-            function: A hook function to zero out specified units.
-        """
-        def hook_ablate(module, input, output):
-            mask_layer = mask[idx]
-            unit_indices = mask_layer.nonzero()[0]
-            output[0][:, :, unit_indices] = 0
-        return hook_ablate
+        self.ablation = ablation
 
     def assess(self,
            data: pd.DataFrame,
@@ -54,11 +35,11 @@ class AssessBenchmark:
            batch_size: int = 20):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.llm.model.to(device)
-        self.clear_hooks()
+        self.ablation.clear_hooks(self.llm)
 
         if mask is not None:
             for idx, layer in enumerate(self.llm.model.model.layers):
-                layer.register_forward_hook(self.get_hook_ablate(idx, mask))
+                layer.register_forward_hook(self.ablation.get_hook_ablate(idx, mask))
 
         exp_df = data.copy()
         logsm_list = []
@@ -100,10 +81,10 @@ class AssessBenchmark:
         self.llm.model.eval()
         assess_dict = OrderedDict([
             ("no_ablation", None),
-            (f"ablate_top_{int(pct * 100)}", self.loc_units.get_masked_ktop(pct).T),
-            (f"ablate_random1_{int(pct * 100)}", self.loc_units.get_random_mask(pct, seed=42).T),
-            (f"ablate_random2_{int(pct * 100)}", self.loc_units.get_random_mask(pct, seed=12345).T),
-            (f"ablate_random3_{int(pct * 100)}", self.loc_units.get_random_mask(pct, seed=98765).T)
+            (f"ablate_top", self.loc_units.get_masked_ktop(pct).T),
+            # (f"ablate_random1_{int(pct * 100)}", self.loc_units.get_random_mask(pct, seed=42).T),
+            # (f"ablate_random2_{int(pct * 100)}", self.loc_units.get_random_mask(pct, seed=12345).T),
+            # (f"ablate_random3_{int(pct * 100)}", self.loc_units.get_random_mask(pct, seed=98765).T)
         ])
         info_process = ["No Ablation",
                         f"Ablation Top-{pct*100:.2f}%",

@@ -1,1 +1,1 @@
-from .LLM import ImportLLM, LayersUnitsLLM
+from .LLM import ImportLLM, LayersUnitsLLM, AverageTaskStimuli
