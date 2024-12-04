@@ -73,7 +73,7 @@ def delete_checkpoint_file(file_path):
     except Exception as e:
         print(f"An error occurred while deleting the file {file_path}: {e}")
 
-def ablation_task(llm:ImportLLM, 
+def ablation_task(llm: ImportLLM, 
                   bench: BenchmarkBaseline, 
                   loc_units: LocImportantUnits, 
                   pct: float, 
@@ -81,13 +81,16 @@ def ablation_task(llm:ImportLLM,
                   check_path: Optional[str] = None,
                   imput: Optional[str] = None):
     if imput is None:
+        print("Using Zeroing Ablation.")
         ablat = ZeroingAblation()
     elif imput == "mean":
+        print("Using Mean Imputation.")
         avg = AverageTaskStimuli(bench, llm)
         ablat = MeanImputation(avg.avg_activation)
 
     assess = AssessBenchmark(llm, loc_units, ablat)
     return assess.experiment(bench, pct=pct, batch_size=batch_size, check_path=check_path)
+
 
 def main():
     # Parse command-line arguments
