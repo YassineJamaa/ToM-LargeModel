@@ -55,6 +55,7 @@ def parse_arguments():
     parser.add_argument("--subset", type=int, default=None, help="Subset size for benchmarks (default: 10).")
     parser.add_argument("--batch", type=int, default=10, help="Batch size (default: 10).")
     parser.add_argument("--extended_loc", type=str, default=False, help="Choose between the classical localizer or extended one.")
+    parser.add_argument("--imput", type=str, default=None, help="Choose between zeroing or mean imputation.")
     return parser.parse_args()
 
 def delete_checkpoint_file(file_path):
