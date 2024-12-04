@@ -194,7 +194,7 @@ class BenchmarkFanToM(BenchmarkBaseline):
         )
 
         # Keep only the False Belief questions
-        df = df[df["question_type"] == 'tom:belief:inaccessible'].copy()
+        df = df[df["question_type"] == 'tom:belief:inaccessible'].copy().reset_index(drop=True)
 
         if (subset is not None) and isinstance(subset, int) and (subset > 0) and (subset < len(df)):
             df = df.iloc[:subset]
