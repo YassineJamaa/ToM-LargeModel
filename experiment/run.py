@@ -94,7 +94,7 @@ def main():
     args = parse_arguments()
 
     # Set up the environment
-    device = setup_environment()
+    hf_token, cache_dir, device = setup_environment()
 
     # Extract arguments
     checkpoint = args.model
@@ -123,7 +123,7 @@ def main():
     model_name = checkpoint.split("/")[-1]
 
     # Load model and tokenizer and Import LLM
-    model, tokenizer = load_model_and_tokenizer(checkpoint, device)
+    model, tokenizer = load_model_and_tokenizer(checkpoint = checkpoint, cache_dir=cache_dir, hf_access_token=hf_token, device=device)
     llm = ImportLLM(model, tokenizer)
 
     # Get the right localizer
