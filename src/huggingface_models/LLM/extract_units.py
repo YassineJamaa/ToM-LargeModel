@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import Dataset
 from .import_model import ImportLLM
 from benchmark import BenchmarkBaseline
+from tqdm import tqdm
 
 class LayersUnitsLLM:
     def __init__(self, llm: ImportLLM, data: Dataset, method: str = "average"):
