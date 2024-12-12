@@ -1,4 +1,5 @@
 # Ignore files related to the cluster
+**/__pycache__/
 error_*
 output_*
 debug.ipynb
