@@ -1,6 +1,6 @@
 from src.localisation import LocImportantUnits
-from src.huggingface_models import ImportLLM
-from benchmark import BenchmarkBaseline
+from src.huggingface_models import ImportLLM, ImportVLM
+from benchmark import BenchmarkBaseline, BenchmarkMMToMQA
 from tqdm import tqdm
 import numpy as np
 import pandas as pd
@@ -82,9 +82,9 @@ class AssessBenchmark:
         assess_dict = OrderedDict([
             ("no_ablation", None),
             (f"ablate_top", self.loc_units.get_masked_ktop(pct).T),
-            # (f"ablate_random1_{int(pct * 100)}", self.loc_units.get_random_mask(pct, seed=42).T),
-            # (f"ablate_random2_{int(pct * 100)}", self.loc_units.get_random_mask(pct, seed=12345).T),
-            # (f"ablate_random3_{int(pct * 100)}", self.loc_units.get_random_mask(pct, seed=98765).T)
+            (f"ablate_random1", self.loc_units.get_random_mask(pct, seed=42).T),
+            (f"ablate_random2", self.loc_units.get_random_mask(pct, seed=12345).T),
+            (f"ablate_random3", self.loc_units.get_random_mask(pct, seed=98765).T)
         ])
         info_process = ["No Ablation",
                         f"Ablation Top-{pct*100:.2f}%",
@@ -121,3 +121,125 @@ class AssessBenchmark:
             if check_path:
                 df.to_csv(check_path, index=False)
         return df
+
+class AssessMMToM:
+    def __init__(self,
+                 vlm: ImportVLM,
+                 mmtom: BenchmarkMMToMQA,
+                 loc_units: LocImportantUnits,
+                 ablation: ZeroingAblation):
+        self.vlm = vlm
+        self.mmtom = mmtom
+        self.loc_units = loc_units
+        self.ablation = ablation
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    # Helper function to create conversation
+    def create_conversation(self, text, content_type):
+        return [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": text},
+                    {"type": content_type},
+                ],
+            }
+        ]
+
+    # Helper function to process input
+    def process_input(self, conversation, input_key, input_value):
+        prompt = self.vlm.processor.apply_chat_template(conversation, add_generation_prompt=True)
+        return self.vlm.processor(
+            text=prompt,
+            **{input_key: input_value},
+            padding=True,
+            return_tensors="pt"
+        ).to(self.device)
+    
+    def return_inputs(self, text, frames=None):
+        # If 1 frame -> Image, Several frames -> Video
+        if frames is not None and len(frames) > 1:
+            clip = np.stack([np.array(x) for x in frames])
+            conversation = self.create_conversation(text, "video")
+            inputs = self.process_input(conversation, "videos", clip)
+        elif frames is not None:
+            frame = np.array(frames[0])
+            conversation = self.create_conversation(text, "image")
+            inputs = self.process_input(conversation, "images", frame)
+        else:
+            conversation = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": text},
+                    ],
+                }
+            ]
+            prompt = self.vlm.processor.apply_chat_template(conversation, add_generation_prompt=True)
+            inputs = self.vlm.processor(
+                text=prompt,
+                padding=True,
+                return_tensors="pt"
+            ).to(self.device)
+
+        return inputs
+    
+    def compute_row(self, pos: int, threshold: int=24):
+        """ Collect the Log Softmax for a pair (Frames, Text)"""
+        text, frames = self.mmtom.extract_text_frames(pos)
+        inputs = self.return_inputs(text, frames[:threshold])
+
+        # Generate the output
+        with torch.no_grad():
+            output = self.vlm.model(**inputs)
+            logprobs = torch.log_softmax(output.logits, dim=-1).cpu()  # Move logprobs to CPU
+        
+        # Get the log_softmax for the options "a", "A", "b", "B"
+        next_token_logits = logprobs[0, -1, :]  # Logits for the last position
+        add_tokens = [" a", " b", " A", " B"] # List of candidates
+        token_logsm_list = [(add_token, 
+                             torch.log_softmax(next_token_logits, dim=-1)[self.vlm.tokenizer.encode(add_token, add_special_tokens=False)].item())
+                             for add_token in add_tokens]
+        return token_logsm_list
+    
+    def compute(self, mask: Optional[np.ndarray] = None,):
+        result_list = []
+
+        if mask is not None:
+            for idx, layer in enumerate(self.vlm.model.language_model.model.layers):
+                layer.register_forward_hook(self.ablation.get_hook_ablate(idx, mask))
+
+        for idx in tqdm(range(len(self.mmtom))):
+            logsm = self.compute_row(idx)
+            result_list.append(logsm)
+        return result_list
+    
+    def extract_highest_val(self, row):
+        return max(row, key=lambda x: x[1])[0].strip().lower()
+    
+    def experiment(self, pct: float=0.01):
+        self.ablation.clear_hooks(self.vlm)
+        self.vlm.model.eval()
+        assess_dict = OrderedDict([
+            ("no_ablation", None),
+            (f"ablate_top", self.loc_units.get_masked_ktop(pct).T),
+            (f"ablate_random1", self.loc_units.get_random_mask(pct, seed=42).T),
+            (f"ablate_random2", self.loc_units.get_random_mask(pct, seed=12345).T),
+            (f"ablate_random3", self.loc_units.get_random_mask(pct, seed=98765).T)
+        ])
+
+        info_process = ["No Ablation",
+                        f"Ablation Top-{pct*100:.2f}%",
+                        f"Random Ablation {pct*100:.2f}% (1/3)",
+                        f"Random Ablation {pct*100:.2f}% (2/3)",
+                        f"Random Ablation {pct*100:.2f}% (3/3)"]
+        
+        data = self.mmtom.df.copy()
+        for idx, (key, mask) in islice(enumerate(assess_dict.items()), 0, None):
+            # Display progress
+            print(f"Step {idx+1}/{len(info_process)}: {info_process[idx]}")
+            result_list = self.compute(mask)
+            data[f"logsm_{key}"] = result_list
+            data[f"predict_{key}"] = data[f"logsm_{key}"].apply(self.extract_highest_val)
+        
+        return data
