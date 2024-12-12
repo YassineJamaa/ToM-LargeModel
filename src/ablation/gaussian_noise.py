@@ -7,7 +7,7 @@ class GaussianNoise(ZeroingAblation):
         super().__init__()
         self.mean_units = mean_units
         self.std_err = std_err
-        self.noise = torch.normal(mean=0, std=self.std_err, size=self.mean_units.shape)
+        self.noise = torch.normal(mean=0, std=self.std_err, size=self.mean_units.shape, device=self.mean_units.device) 
     
     def get_hook_ablate(self, idx, mask):
         """

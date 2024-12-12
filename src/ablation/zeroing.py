@@ -5,9 +5,23 @@ class ZeroingAblation:
     def __init__(self):
         pass
 
-    def clear_hooks(self, llm: ImportLLM):
-        """Clears all registered forward hooks in the model layers."""
-        for layer in llm.model.model.layers:
+    def clear_hooks(self, model_wrapper):
+        """
+        Clears all registered forward hooks in the model layers.
+
+        Args:
+            model_wrapper: An instance of ImportLLM or ImportVLM.
+        """
+        if hasattr(model_wrapper.model, 'model'):  # For ImportLLM
+            layers = model_wrapper.model.model.layers
+            print("Model type detected: LLM")
+        elif hasattr(model_wrapper.model.language_model, 'model'):  # For ImportVLM
+            layers = model_wrapper.model.language_model.model.layers
+            print("Model type detected: VLM")
+        else:
+            raise ValueError("Unsupported model wrapper type. Ensure the structure matches either ImportLLM or ImportVLM.")
+
+        for layer in layers:
             layer._forward_hooks.clear()
 
     def get_hook_ablate(self, idx, mask):
