@@ -22,6 +22,7 @@ class LocImportantUnits:
         # Reshape for Welch t-test
         fb_flattened = np.abs(self.fb_group.reshape(self.fb_group.shape[0], -1))
         fp_flattened = np.abs(self.fp_group.reshape(self.fp_group.shape[0], -1))
+        
         # Perform the t-test along the first axis (sample dimension)
         t_stat, _ = ttest_ind(fb_flattened, fp_flattened, axis=0, equal_var=False)
         print(t_stat.shape)
@@ -40,8 +41,12 @@ class LocImportantUnits:
     
     def get_masked_ktop(self, percentage):
         num_top_elements = int(self.t_values.size * percentage)
+
         # Flatten the matrix, find the threshold value for the top 1%
         flattened_matrix = self.t_values.flatten()
+
+        # Replace NaN with a sentinel value (e.g., -inf)
+        flattened_matrix = np.nan_to_num(flattened_matrix, nan=-np.inf)
         threshold_value = np.partition(flattened_matrix, -num_top_elements)[-num_top_elements]
 
         # Create a binary mask where 1 represents the top 1% elements, and 0 otherwise

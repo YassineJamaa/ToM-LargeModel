@@ -24,8 +24,8 @@ class BenchmarkMMToMQA:
 
         # Extract text dataset
         df = pd.read_json(self.dir_text, lines=True)
-        self.df = df.copy()
-        # self.df = df[df["question_type"] == self.q_type[_type]].copy()
+        # self.df = df.copy()
+        self.df = df[df["question_type"] == self.q_type[_type]].copy()
         if subset is not None:
             self.df = self.df.iloc[:subset].copy()
             self.df.reset_index(inplace=True)
@@ -67,14 +67,14 @@ class BenchmarkMMToMQA:
 
         return self.get_frames(episode, selected_frames)
 
-    def extract_text_frames(self, pos):
+    def __getitem__(self, pos):
         """ Extract the prompt with the corresponding videos frames """
         frames = self.extract_middle_frame(pos)
         prompt = self.df["prompt"].iloc[pos]
         return prompt, frames
     
     def plot_text_frames(self, pos):
-        prompt, frames = self.extract_text_frames(pos)
+        prompt, frames = self[pos]
 
         # Story
         print(f"{prompt}\n")
@@ -88,4 +88,4 @@ class BenchmarkMMToMQA:
             plt.imshow(frame)
             plt.axis('off')  # Hide axes
             plt.title(f"Frame {idx}")  # Add a title with the frame index
-            plt.show()  
+            plt.show()

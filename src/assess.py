@@ -127,57 +127,59 @@ class AssessMMToM:
                  vlm: ImportVLM,
                  mmtom: BenchmarkMMToMQA,
                  loc_units: LocImportantUnits,
-                 ablation: ZeroingAblation):
+                 ablation: ZeroingAblation,
+                 is_video=True):
         self.vlm = vlm
         self.mmtom = mmtom
         self.loc_units = loc_units
         self.ablation = ablation
+        self.is_video = is_video
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    # Helper function to create conversation
-    def create_conversation(self, text, content_type):
-        return [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": text},
-                    {"type": content_type},
-                ],
-            }
-        ]
+    def return_inputs(self, text, frames: Optional[list] = None):
+        """
+        Prepares model inputs based on the user's text and optional media (images or videos).
 
-    # Helper function to process input
-    def process_input(self, conversation, input_key, input_value):
-        prompt = self.vlm.processor.apply_chat_template(conversation, add_generation_prompt=True)
-        return self.vlm.processor(
-            text=prompt,
-            **{input_key: input_value},
-            padding=True,
-            return_tensors="pt"
-        ).to(self.device)
-    
-    def return_inputs(self, text, frames=None):
-        # If 1 frame -> Image, Several frames -> Video
-        if frames is not None and len(frames) > 1:
-            clip = np.stack([np.array(x) for x in frames])
-            conversation = self.create_conversation(text, "video")
-            inputs = self.process_input(conversation, "videos", clip)
-        elif frames is not None:
-            frame = np.array(frames[0])
-            conversation = self.create_conversation(text, "image")
-            inputs = self.process_input(conversation, "images", frame)
-        else:
+        Args:
+            text (str): User's text input.
+            frames (list, optional): List of image or video frames.
+
+        Returns:
+            dict: Processed inputs for the model.
+        """
+        if (frames is None) or (not self.is_video) or (len(frames)==1):
+            # Handle text input with optional single or multiple images
+            content = [{"type": "text", "text": text}]
+            if frames:
+                content.extend([{"type": "image"} for _ in frames])
+
+            conversation = [{"role": "user", "content": content}]
+            prompt = self.vlm.processor.apply_chat_template(conversation, add_generation_prompt=True)
+
+            inputs = self.vlm.processor(
+                text=prompt,
+                images=frames if frames else None,
+                padding=True,
+                return_tensors="pt"
+            ).to(self.device)
+        
+        elif self.is_video and frames and len(frames) > 1:
+            # Handle video input
+            clip = np.stack([np.array(frame) for frame in frames[:24]])
+
             conversation = [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": text},
-                    ],
-                }
-            ]
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": text},
+                            {"type": "video"},
+                        ],
+                    }
+                ]
             prompt = self.vlm.processor.apply_chat_template(conversation, add_generation_prompt=True)
             inputs = self.vlm.processor(
                 text=prompt,
+                videos=clip,
                 padding=True,
                 return_tensors="pt"
             ).to(self.device)
@@ -186,8 +188,8 @@ class AssessMMToM:
     
     def compute_row(self, pos: int, threshold: int=24):
         """ Collect the Log Softmax for a pair (Frames, Text)"""
-        text, frames = self.mmtom.extract_text_frames(pos)
-        inputs = self.return_inputs(text, frames[:threshold])
+        text, frames = self.mmtom[pos]
+        inputs = self.return_inputs(text, frames)
 
         # Generate the output
         with torch.no_grad():
@@ -225,14 +227,21 @@ class AssessMMToM:
             (f"ablate_top", self.loc_units.get_masked_ktop(pct).T),
             (f"ablate_random1", self.loc_units.get_random_mask(pct, seed=42).T),
             (f"ablate_random2", self.loc_units.get_random_mask(pct, seed=12345).T),
-            (f"ablate_random3", self.loc_units.get_random_mask(pct, seed=98765).T)
+            (f"ablate_random3", self.loc_units.get_random_mask(pct, seed=98765).T),
+            (f"ablate_random4", self.loc_units.get_random_mask(pct, seed=2024).T),
+            (f"ablate_random5", self.loc_units.get_random_mask(pct, seed=56789).T),
+            (f"ablate_random6", self.loc_units.get_random_mask(pct, seed=2025).T),
         ])
 
         info_process = ["No Ablation",
                         f"Ablation Top-{pct*100:.2f}%",
-                        f"Random Ablation {pct*100:.2f}% (1/3)",
-                        f"Random Ablation {pct*100:.2f}% (2/3)",
-                        f"Random Ablation {pct*100:.2f}% (3/3)"]
+                        f"Random Ablation {pct*100:.2f}% (1/6)",
+                        f"Random Ablation {pct*100:.2f}% (2/6)",
+                        f"Random Ablation {pct*100:.2f}% (3/6)",
+                        f"Random Ablation {pct*100:.2f}% (4/6)",
+                        f"Random Ablation {pct*100:.2f}% (5/6)",
+                        f"Random Ablation {pct*100:.2f}% (6/6)",
+                        ]
         
         data = self.mmtom.df.copy()
         for idx, (key, mask) in islice(enumerate(assess_dict.items()), 0, None):

@@ -1,7 +1,7 @@
 import os
 import torch
 from dotenv import load_dotenv
-from transformers import LlavaNextVideoProcessor, LlavaNextVideoForConditionalGeneration, AutoTokenizer
+from transformers import LlavaNextVideoProcessor, LlavaNextVideoForConditionalGeneration, AutoTokenizer, AutoProcessor, MllamaForConditionalGeneration
 import sys
 from typing import Optional
 import argparse
@@ -32,14 +32,22 @@ def setup_environment():
 
 def load_model_and_tokenizer(checkpoint: str, cache_dir: Optional[str], hf_access_token: Optional[str], device):
     """Load the model and tokenizer onto the specified device."""
-    processor = LlavaNextVideoProcessor.from_pretrained(checkpoint, torch_dtype=torch.float16, cache_dir=cache_dir, token=hf_access_token)
+    if checkpoint == "llava-hf/LLaVA-NeXT-Video-7B-hf":
+        model = LlavaNextVideoForConditionalGeneration.from_pretrained(checkpoint, torch_dtype=torch.float16, cache_dir=cache_dir, token=hf_access_token).to(device)
+        is_video = True
+    elif checkpoint == "meta-llama/Llama-3.2-11B-Vision-Instruct":
+        model = MllamaForConditionalGeneration.from_pretrained(checkpoint, torch_dtype=torch.float16, cache_dir=cache_dir, token=hf_access_token).to(device)
+        is_video = False
+    else:
+        raise ValueError(f"Model not recognize.")
+    
+    processor = AutoProcessor.from_pretrained(checkpoint, torch_dtype=torch.float16, cache_dir=cache_dir, token=hf_access_token)
     tokenizer = AutoTokenizer.from_pretrained(checkpoint, cache_dir=cache_dir, token=hf_access_token)
-    model = LlavaNextVideoForConditionalGeneration.from_pretrained(checkpoint, torch_dtype=torch.float16, cache_dir=cache_dir, token=hf_access_token).to(device)
     allocated_memory = torch.cuda.memory_allocated() / (1024 ** 3)  # Convert to GB
     reserved_memory = torch.cuda.memory_reserved() / (1024 ** 3)  # Convert to GB
     print(f"Allocated GPU memory: {allocated_memory:.2f} GB (actively used by tensors)")
     print(f"Reserved GPU memory: {reserved_memory:.2f} GB (reserved by PyTorch but not actively used)")
-    return model, processor, tokenizer
+    return model, processor, tokenizer, is_video
 
 def ensure_directory_exists(path: str):
     """Ensure the directory exists; create it if it does not."""
@@ -59,6 +67,7 @@ def ablation_task(vlm: ImportVLM,
                   bench: BenchmarkMMToMQA,
                   loc_units: LocImportantUnits,
                   pct: float,
+                  is_video: bool,
                   impute: Optional[str]=None):
     if impute is None:
         print("Using Zeroing Ablation.")
@@ -67,7 +76,7 @@ def ablation_task(vlm: ImportVLM,
     else:
         raise ValueError(f"Invalid impute value: {impute}. Accepted value is only None.")
     
-    assess = AssessMMToM(vlm, bench, loc_units, ablat)
+    assess = AssessMMToM(vlm, bench, loc_units, ablat, is_video)
     return assess.experiment(pct)
 
 def main():
@@ -100,7 +109,7 @@ def main():
     model_name = checkpoint.split("/")[-1]
 
     # Load model and tokenizer and Import LLM
-    model, processor, tokenizer = load_model_and_tokenizer(checkpoint = checkpoint, cache_dir=cache_dir, hf_access_token=hf_token, device=device)
+    model, processor, tokenizer, is_video = load_model_and_tokenizer(checkpoint = checkpoint, cache_dir=cache_dir, hf_access_token=hf_token, device=device)
     vlm = ImportVLM(model, processor, tokenizer)
 
     # Get the right localizer
@@ -130,7 +139,8 @@ def main():
                               loc_units=loc_units,
                               impute=impute,
                               bench=bench_mmtom,
-                              pct=pct)
+                              pct=pct,
+                              is_video=is_video)
     
     # Save results to output directory
     mmtom_res.to_csv(output_path_mmtom, index=False)
