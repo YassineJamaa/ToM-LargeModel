@@ -7,7 +7,7 @@ Welcome to the ```ToMechanisms``` repo! This is a Python package for doing incre
 **Caution:**: this package is still under development and may change rapidly over the next few weeks.
 
 ## Setup
-1. Create conda environment: `conda create -n llm-loc python=3.10`
+1. Create conda environment: `conda create -n llm-loc`
 2. Activate environment: `conda activate llm-loc`
 3. Install packages: `pip install -r requirements.txt`
 
