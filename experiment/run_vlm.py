@@ -20,29 +20,57 @@ from src import (
     ExtendedTomLocGPT4
 )
 from benchmark import BenchmarkMMToMQA
+from hardware.device_manager import setup_device
+
+def get_model_args(model_name, cache_dir=None, token=None):
+    """
+    Prepares and returns the arguments for loading a Hugging Face model with `from_pretrained`.
+    Optional parameters like `cache_dir` and `token` are included only if provided (not None).
+    """
+    print("\n🛠 Preparing model arguments...")
+
+    # Initialize the argument dictionary
+    from_pretrained_args = {
+        "pretrained_model_name_or_path": model_name,
+        "torch_dtype": torch.bfloat16 if torch.cuda.is_available() else torch.float32,
+    }
+
+    # Add optional arguments if they are not None
+    if cache_dir is not None:
+        from_pretrained_args["cache_dir"] = cache_dir
+    if token is not None:
+        from_pretrained_args["token"] = token
+
+    print("✅ Model arguments prepared")
+    return from_pretrained_args
 
 def setup_environment():
     """Load environment variables and configure device."""
     load_dotenv()  # Ensure .env is in the project root
     hf_access_token = os.getenv("HF_ACCESS_TOKEN")
     cache_dir = os.getenv("CACHE_DIR")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    torch.cuda.empty_cache()
-    return hf_access_token, cache_dir, device
+    return hf_access_token, cache_dir
 
-def load_model_and_tokenizer(checkpoint: str, cache_dir: Optional[str], hf_access_token: Optional[str], device):
+def load_model_and_tokenizer(model_args: dict, device: str, device_ids: list):
     """Load the model and tokenizer onto the specified device."""
-    if checkpoint == "llava-hf/LLaVA-NeXT-Video-7B-hf":
-        model = LlavaNextVideoForConditionalGeneration.from_pretrained(checkpoint, torch_dtype=torch.float16, cache_dir=cache_dir, token=hf_access_token).to(device)
+    if model_args["pretrained_model_name_or_path"] == "llava-hf/LLaVA-NeXT-Video-7B-hf":
+        model = LlavaNextVideoForConditionalGeneration.from_pretrained(**model_args)
         is_video = True
-    elif checkpoint == "meta-llama/Llama-3.2-11B-Vision-Instruct":
-        model = MllamaForConditionalGeneration.from_pretrained(checkpoint, torch_dtype=torch.float16, cache_dir=cache_dir, token=hf_access_token).to(device)
+    elif model_args["pretrained_model_name_or_path"] == "meta-llama/Llama-3.2-11B-Vision-Instruct":
+        model = MllamaForConditionalGeneration.from_pretrained(**model_args)
         is_video = False
     else:
         raise ValueError(f"Model not recognize.")
     
-    processor = AutoProcessor.from_pretrained(checkpoint, torch_dtype=torch.float16, cache_dir=cache_dir, token=hf_access_token)
-    tokenizer = AutoTokenizer.from_pretrained(checkpoint, cache_dir=cache_dir, token=hf_access_token)
+    if len(device_ids)>1:
+        model.to(device)
+    else:
+        model.tie_weights()
+        model.to("auto_device")
+    
+    processor_args = {key:value for key, value in model_args.items() if key not in ["torch_dtype"]}
+    processor = AutoProcessor.from_pretrained(**processor_args)
+    tokenizer = AutoTokenizer.from_pretrained(**processor_args)
     allocated_memory = torch.cuda.memory_allocated() / (1024 ** 3)  # Convert to GB
     reserved_memory = torch.cuda.memory_reserved() / (1024 ** 3)  # Convert to GB
     print(f"Allocated GPU memory: {allocated_memory:.2f} GB (actively used by tensors)")
@@ -60,7 +88,7 @@ def parse_arguments():
     parser.add_argument("--subset", type=int, default=None, help="Subset size for benchmarks (default: 10).")
     parser.add_argument("--extended_loc", type=str, default=False, help="Choose between the classical localizer or extended one.")
     parser.add_argument("--impute", type=str, default=None, help="Choose between zeroing or mean imputation.")
-    parser.add_argument("--pct", type=float, required=True, help="Top percentage for ablation.")
+    parser.add_argument("--pct", type=float, default=0.01, help="Top percentage for ablation.")
     return parser.parse_args()
 
 def ablation_task(vlm: ImportVLM,
@@ -83,15 +111,17 @@ def main():
     # Parse command-line arguments
     args = parse_arguments()
 
-    # Set up the environment
-    hf_token, cache_dir, device = setup_environment()
-
     # Extract arguments
     checkpoint = args.model
     pct = args.pct
     subset = args.subset
     impute = args.impute
     extended_loc = args.extended_loc
+
+    # Set up the environment & Device Set Up & Model arguments
+    hf_token, cache_dir = setup_environment()
+    device, device_ids = setup_device()
+    model_args = get_model_args(model_name=checkpoint, cache_dir=cache_dir, token=hf_token)
 
     # Imputation Name
     if impute is None:
@@ -109,7 +139,7 @@ def main():
     model_name = checkpoint.split("/")[-1]
 
     # Load model and tokenizer and Import LLM
-    model, processor, tokenizer, is_video = load_model_and_tokenizer(checkpoint = checkpoint, cache_dir=cache_dir, hf_access_token=hf_token, device=device)
+    model, processor, tokenizer, is_video = load_model_and_tokenizer(model_args, device, device_ids)
     vlm = ImportVLM(model, processor, tokenizer)
 
     # Get the right localizer
