@@ -3,6 +3,5 @@
 Logs/
 Cluster/
 data_analysis/
-!benchmark/
 !dataset/
 .env
