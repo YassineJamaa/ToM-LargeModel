@@ -63,10 +63,10 @@ def load_model_and_tokenizer(model_args: dict, device: str, device_ids: list):
         raise ValueError(f"Model not recognize.")
     
     if len(device_ids)>1:
-        model.to(device)
-    else:
         model.tie_weights()
         model.to("auto_device")
+    else:
+        model.to(device)
     
     processor_args = {key:value for key, value in model_args.items() if key not in ["torch_dtype"]}
     processor = AutoProcessor.from_pretrained(**processor_args)
@@ -89,6 +89,7 @@ def parse_arguments():
     parser.add_argument("--extended_loc", type=str, default=False, help="Choose between the classical localizer or extended one.")
     parser.add_argument("--impute", type=str, default=None, help="Choose between zeroing or mean imputation.")
     parser.add_argument("--pct", type=float, default=0.01, help="Top percentage for ablation.")
+    parser.add_argument("--modality", type=str, default="multi", help="Input modality type: 'multi' for Vision-Text inputs, or 'text' for Text-Only inputs.")
     return parser.parse_args()
 
 def ablation_task(vlm: ImportVLM,
@@ -96,6 +97,7 @@ def ablation_task(vlm: ImportVLM,
                   loc_units: LocImportantUnits,
                   pct: float,
                   is_video: bool,
+                  modality: str,
                   impute: Optional[str]=None):
     if impute is None:
         print("Using Zeroing Ablation.")
@@ -105,7 +107,7 @@ def ablation_task(vlm: ImportVLM,
         raise ValueError(f"Invalid impute value: {impute}. Accepted value is only None.")
     
     assess = AssessMMToM(vlm, bench, loc_units, ablat, is_video)
-    return assess.experiment(pct)
+    return assess.experiment(pct, modality)
 
 def main():
     # Parse command-line arguments
@@ -117,6 +119,7 @@ def main():
     subset = args.subset
     impute = args.impute
     extended_loc = args.extended_loc
+    modality = args.modality
 
     # Set up the environment & Device Set Up & Model arguments
     hf_token, cache_dir = setup_environment()
@@ -163,14 +166,15 @@ def main():
     ensure_directory_exists(output_dir)
 
     # MMToMQA
-    output_path_mmtom = os.path.join(output_dir, f"MMToMQA_{model_name.replace('.', '_')}_{impute_name}.csv")
+    output_path_mmtom = os.path.join(output_dir, f"MMToMQA_{model_name.replace('.', '_')}_{impute_name}_{modality.upper()}.csv")
     bench_mmtom = BenchmarkMMToMQA(subset=subset)
     mmtom_res = ablation_task(vlm=vlm,
                               loc_units=loc_units,
                               impute=impute,
                               bench=bench_mmtom,
                               pct=pct,
-                              is_video=is_video)
+                              is_video=is_video,
+                              modality=modality)
     
     # Save results to output directory
     mmtom_res.to_csv(output_path_mmtom, index=False)

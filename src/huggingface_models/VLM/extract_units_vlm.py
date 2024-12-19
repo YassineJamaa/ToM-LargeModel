@@ -3,15 +3,15 @@ from torch.utils.data import Dataset
 from .import_vlm import ImportVLM
 
 class LayersUnitsVLM:
-    def __init__(self, vlm: ImportVLM, data: Dataset):
+    def __init__(self, vlm: ImportVLM, localizer_data: Dataset):
         self.vlm = vlm
-        self.data = data
+        self.data = localizer_data
         # Check if GPU is available
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.data_activation = None
         self.group = {"positive": 0, "negative": 1}
         self.method_fn = "average"
-        self.name = type(data).__name__
+        self.name = type(localizer_data).__name__
 
         self.extract_all_units()
         self.clear_hooks()

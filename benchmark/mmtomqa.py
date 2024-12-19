@@ -4,9 +4,11 @@ import os
 from PIL import Image
 import pickle
 import matplotlib.pyplot as plt
+from .utils import BenchmarkVisionText
 
-class BenchmarkMMToMQA:
-    def __init__(self, _type="False belief", subset:Optional[int]=None):
+class BenchmarkMMToMQA(BenchmarkVisionText):
+    def __init__(self, subset:Optional[int]=None):
+        super().__init__()
         # Directory of videos
         self.dir_videos = "dataset/benchmarks/MMToMQA/videos/single_agent_partial_train_240_hp_test_highres"
         self.dir_text = "dataset/benchmarks/MMToMQA/text/questions.json"
@@ -24,17 +26,19 @@ class BenchmarkMMToMQA:
 
         # Extract text dataset
         df = pd.read_json(self.dir_text, lines=True)
-        # self.df = df.copy()
-        self.df = df[df["question_type"] == self.q_type[_type]].copy()
+        #self.data = df[df["question_type"]!=2.4].copy()
+        self.data = df.copy()
         if subset is not None:
-            self.df = self.df.iloc[:subset].copy()
-            self.df.reset_index(inplace=True)
+            self.data = self.data.iloc[:subset].copy()
+        
+        # Reset Index
+        self.data.reset_index(inplace=True)
 
         # Rename columns
-        self.df.rename(columns={"answer_list": "cands", "question": "prompt"}, inplace=True)
+        self.data.rename(columns={"answer_list": "cands", "question": "prompt"}, inplace=True)
 
     def __len__(self):
-        return len(self.df)
+        return len(self.data)
     
     def get_frames(self, episode, selected_frames):
         # Path for the episode
@@ -50,9 +54,9 @@ class BenchmarkMMToMQA:
 
     def extract_middle_frame(self, pos):
         """ Extract the prompt """
-        episode = self.df["episode"].iloc[pos]
-        start_time = self.df["start_time"].iloc[pos]
-        end_time = self.df["end_time"].iloc[pos]
+        episode = self.data["episode"].iloc[pos]
+        start_time = self.data["start_time"].iloc[pos]
+        end_time = self.data["end_time"].iloc[pos]
         path_intervals = os.path.join(self.dir_videos, f"task_{episode}", "frame_intervals.pik")
 
         # Open the .pik file in binary read mode
@@ -70,7 +74,7 @@ class BenchmarkMMToMQA:
     def __getitem__(self, pos):
         """ Extract the prompt with the corresponding videos frames """
         frames = self.extract_middle_frame(pos)
-        prompt = self.df["prompt"].iloc[pos]
+        prompt = self.data["prompt"].iloc[pos]
         return prompt, frames
     
     def plot_text_frames(self, pos):

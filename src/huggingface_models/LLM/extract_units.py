@@ -136,5 +136,4 @@ class AverageTaskStimuli:
         self.reset()
         for idx in range(len(self.benchmark)):
             self.data_activation[idx,:,:] = self.extract_layer_units(idx)
-        
         return self.data_activation.mean(dim=0)
