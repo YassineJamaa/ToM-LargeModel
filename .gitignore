@@ -1,12 +1,8 @@
 # Ignore files related to the cluster
 **/__pycache__/
-error_*
-output_*
-debug.ipynb
-test.ipynb
+Logs/
+Cluster/
+data_analysis/
+!benchmark/
+!dataset/
 .env
-run.bash
-
-# Ignore folder with datas (too loud)
-Result-Experiment/
-Output/
