@@ -1,8 +1,8 @@
 import pandas as pd
-from .utils import BenchmarkBaseline
+from .utils import BenchmarkText
 from typing import Optional
 
-class BenchmarkOpenToM(BenchmarkBaseline):
+class BenchmarkOpenToM(BenchmarkText):
     def __init__(self, 
                  story: Optional[str] = None,
                  order: Optional[str]=None,
@@ -74,8 +74,5 @@ class BenchmarkOpenToM(BenchmarkBaseline):
             axis=1)
         return df
     
-    # def __len__(self):
-    #     """
-    #     Returns the total number of samples in the dataset.
-    #     """
-    #     return len(self.expanded_df)
+    def __getitem__(self, idx):
+        return self.data["prompt"].iloc[idx]

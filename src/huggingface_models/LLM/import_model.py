@@ -3,9 +3,9 @@ class ImportLLM:
         self.model = model
         self.tokenizer = tokenizer
 
-        # Ensure the tokenizer has a padding token
-        if self.tokenizer.pad_token is None:
-            self.tokenizer.pad_token = self.tokenizer.eos_token
+        # # Ensure the tokenizer has a padding token
+        # if self.tokenizer.pad_token is None:
+        #     self.tokenizer.pad_token = self.tokenizer.eos_token
 
     def get_embd_size(self):
         return self.model.config.hidden_size

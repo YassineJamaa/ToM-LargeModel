@@ -1,5 +1,5 @@
 import pandas as pd
-from .utils import BenchmarkBaseline
+from .utils import BenchmarkText
 from typing import Optional
 
 import os
@@ -137,7 +137,7 @@ def extract_characters(story):
     characters = {line.split(":")[0] for line in lines if ":" in line}
     return sorted(characters)
 
-class BenchmarkFanToM(BenchmarkBaseline):
+class BenchmarkFanToM(BenchmarkText):
     def __init__(self, 
                  is_full: Optional[bool] = True,
                  subset: Optional[int]=None):
@@ -200,3 +200,6 @@ class BenchmarkFanToM(BenchmarkBaseline):
             df = df.iloc[:subset]
         
         return df
+    
+    def __getitem__(self, idx):
+        return self.data["prompt"].iloc[idx]

@@ -1,9 +1,9 @@
 import pandas as pd
 import ast
-from .utils import BenchmarkBaseline
+from .utils import BenchmarkText
 from typing import Optional
 
-class BenchmarkToMi(BenchmarkBaseline):
+class BenchmarkToMi(BenchmarkText):
     def __init__(self, subset: Optional[int]=None):
         super().__init__()
         
@@ -36,8 +36,5 @@ class BenchmarkToMi(BenchmarkBaseline):
         
         return df
 
-    # def __len__(self):
-    #     """
-    #     Returns the total number of samples in the dataset.
-    #     """
-    #     return len(self.expanded_df)
+    def __getitem__(self, idx):
+        return self.data["prompt"].iloc[idx]
