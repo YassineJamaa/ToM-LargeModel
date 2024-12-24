@@ -1,4 +1,5 @@
 from src.localisation import LocImportantUnits
+from src.config import load_chat_template
 from src.huggingface_models import ImportModel
 from benchmark import BenchmarkText, BenchmarkVisionText, BenchmarkBaseline, BenchmarkMMToMQA
 from tqdm import tqdm
@@ -10,6 +11,8 @@ from collections import OrderedDict
 import os
 from itertools import islice
 from src.ablation import ZeroingAblation
+import warnings
+
 
 def compute_cand_score(row):
     logits = row['log_sm']
@@ -125,6 +128,154 @@ class AssessBenchmark:
             if check_path:
                 df.to_csv(check_path, index=False)
         return df
+    
+
+def get_highest_key(probabilities):
+    
+    # Find the key with the highest value
+    max_key = max(probabilities, key=probabilities.get)
+    
+    # Normalize the key
+    return max_key.strip().lower()
+    
+class AssessMMToMv2:
+    def __init__(self,
+                 import_model: ImportModel,
+                 mmtom: BenchmarkMMToMQA,
+                 loc_units: LocImportantUnits,
+                 ablation: ZeroingAblation,
+                 device: str,
+                 is_video: bool=True):
+        self.import_model = import_model
+        self.mmtom = mmtom
+        self.loc_units = loc_units
+        self.ablation = ablation
+        self.modality = "multi"
+        self.device = device
+        self.is_video = is_video
+
+        # Input strings
+        self.candidates = ["a", " a", "A", " A", "b", " b", "B", " B"]
+        self.tokens_list = [self.import_model.tokenizer.tokenize(s) for s in self.candidates]
+        self.token_ids_list = [self.import_model.tokenizer.convert_tokens_to_ids(tokens) for tokens in self.tokens_list]
+            
+    def return_inputs(self, text, frames: Optional[list] = None):
+        """
+        Prepares model inputs based on the user's text and optional media (images or videos).
+
+        Args:
+            text (str): User's text input.
+            frames (list, optional): List of image or video frames.
+
+        Returns:
+            dict: Processed inputs for the model.
+        """
+
+        # Handle text input with optional single or multiple images
+        content = [{"type": "text", "text": text}]
+        processor_args = {
+                "images": frames if frames else None
+            }
+        if frames and not self.is_video:
+            content.extend([{"type": "image"} for _ in frames])
+        elif frames and self.is_video:
+            content.extend([{"type": "video"}])
+            clip = np.stack([frame for frame in frames])
+            processor_args = {
+                "videos": clip
+            }
+
+        conversation = [{"role": "user", "content": content}]
+        prompt = self.import_model.processor.apply_chat_template(conversation, add_generation_prompt=True)
+
+        inputs = self.import_model.processor(
+            text=prompt,
+            padding=True,
+            return_tensors="pt",
+            **processor_args
+        ).to(self.device)
+        return inputs
+    
+    def compute_row(self, pos: int):
+        """ Collect the Log Softmax for a pair (Frames, Text)"""
+        text, frames = self.mmtom[pos]
+
+        # Choose between Text-Only or Vision-Text
+        if self.modality=="multi":
+            inputs = self.return_inputs(text, frames)
+        elif self.modality=="text":
+            inputs = self.return_inputs(text, None)
+
+        # Generate the output
+        input_ids = inputs["input_ids"]
+        with torch.no_grad():
+            outputs = self.import_model.model.generate(
+                                        input_ids,
+                                        do_sample=False,
+                                        temperature=None,  # Unset temperature
+                                        top_p=None,
+                                        max_length=input_ids.size(1) + 1,
+                                        output_scores=True,
+                                        return_dict_in_generate=True)
+            # Access scores instead of logits
+            logits = outputs.scores[0]  # This is a list of logits for each generated token
+            prob_tokens = torch.softmax(logits, dim=1)[0]
+        
+        cands_probs = {token: prob_tokens[token_id[0]].item() for token, token_id in zip(self.candidates, self.token_ids_list)}
+
+        return cands_probs
+    
+    def compute(self, mask: Optional[np.ndarray] = None,):
+        result_list = []
+
+        if mask is not None:
+            language_model = self.import_model.get_language_model()
+            for idx, layer in enumerate(language_model.model.layers):
+                layer.register_forward_hook(self.ablation.get_hook_ablate(idx, mask))
+
+        for idx in tqdm(range(len(self.mmtom))):
+            probs = self.compute_row(idx)
+            result_list.append(probs)
+        return result_list
+    
+    
+    def experiment(self, pct: float=0.01, modality: Optional[str]=None):
+        self.ablation.clear_hooks(self.import_model)
+        self.import_model.model.eval()
+        assess_dict = OrderedDict([
+            ("no_ablation", None),
+            (f"ablate_top", self.loc_units.get_masked_ktop(pct).T),
+            # (f"ablate_random1", self.loc_units.get_random_mask(pct, seed=42).T),
+            # (f"ablate_random2", self.loc_units.get_random_mask(pct, seed=12345).T),
+            # (f"ablate_random3", self.loc_units.get_random_mask(pct, seed=98765).T),
+            # (f"ablate_random4", self.loc_units.get_random_mask(pct, seed=2024).T),
+            # (f"ablate_random5", self.loc_units.get_random_mask(pct, seed=56789).T),
+            # (f"ablate_random6", self.loc_units.get_random_mask(pct, seed=2025).T),
+        ])
+
+        info_process = ["No Ablation",
+                        f"Ablation Top-{pct*100:.2f}%",
+                        f"Random Ablation {pct*100:.2f}% (1/6)",
+                        f"Random Ablation {pct*100:.2f}% (2/6)",
+                        f"Random Ablation {pct*100:.2f}% (3/6)",
+                        f"Random Ablation {pct*100:.2f}% (4/6)",
+                        f"Random Ablation {pct*100:.2f}% (5/6)",
+                        f"Random Ablation {pct*100:.2f}% (6/6)",
+                        ]
+        
+        if modality and modality in ["mutli", "text"]:
+            self.modality = modality
+        
+        data = self.mmtom.data.copy()
+        for idx, (key, mask) in islice(enumerate(assess_dict.items()), 0, None):
+            # Display progress
+            print(f"Step {idx+1}/{len(info_process)}: {info_process[idx]}")
+            result_list = self.compute(mask)
+            data[f"prob_tokens_{key}"] = result_list
+            data[f"predict_{key}"] = data[f"prob_tokens_{key}"].apply(get_highest_key)
+        
+        return data
+
 
 class AssessMMToM:
     def __init__(self,
@@ -295,8 +446,7 @@ def call_assessment(benchmark, method_name="experiment", init_args=None, method_
     if isinstance(benchmark, BenchmarkText):
         assess = AssessBenchmark(**init_args)
     elif isinstance(benchmark, BenchmarkVisionText):
-        print("Here.")
-        assess = AssessMMToM(**init_args)
+        assess = AssessMMToMv2(**init_args)
     else:
         raise ValueError("Unsupported benchmark type.")
     

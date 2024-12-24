@@ -1,4 +1,3 @@
-
 def get_model_component(model):
     """
     Dynamically retrieves the model component from the provided model instance,
@@ -14,15 +13,16 @@ def get_model_component(model):
         return model.module
     return model
 
-
 class ImportModel:
-    def __init__(self, model_type, model, tokenizer, processor=None):
+    def __init__(self, model_type, model, tokenizer, processor=None, chat_template=None):
         self.model_type = model_type
         self.model = model
         self.model_ref = get_model_component(self.model)
         self.config = self.get_config()
         self.tokenizer = tokenizer
         self.processor = processor
+        if chat_template and self.processor:
+            self.processor.chat_template = chat_template
     
     def get_language_model(self):
         if self.model_type == "LLM":

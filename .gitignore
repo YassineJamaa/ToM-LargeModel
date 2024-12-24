@@ -3,5 +3,5 @@
 Logs/
 Cluster/
 data_analysis/
-!dataset/
+
 .env

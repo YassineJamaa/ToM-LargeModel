@@ -26,7 +26,7 @@ class BenchmarkMMToMQA(BenchmarkVisionText):
 
         # Extract text dataset
         df = pd.read_json(self.dir_text, lines=True)
-        #self.data = df[df["question_type"]!=2.4].copy()
+        # self.data = df[df["question_type"]!=2.4].copy()
         self.data = df.copy()
         if subset is not None:
             self.data = self.data.iloc[:subset].copy()
