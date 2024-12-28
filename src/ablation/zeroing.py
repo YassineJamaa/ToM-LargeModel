@@ -1,4 +1,4 @@
-from src.huggingface_models import ImportModel
+from src.hf_model import ImportModel
 import numpy as np
 
 class ZeroingAblation:

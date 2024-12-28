@@ -5,25 +5,37 @@ from typing import Optional
 class BenchmarkOpenToM(BenchmarkText):
     def __init__(self, 
                  story: Optional[str] = None,
-                 order: Optional[str]=None,
+                 order: Optional[str]="first_order",
                  subset: Optional[int]=None):
-        """ 
-
-
-
-        """
+        """ OpenToM Benchmark"""
         super().__init__()
         if story:
             self.story = story
         else:
             self.story = "narrative"
         df = self.preprocess()
-        self.data = self.classic_prompting(df, order, subset)
+        df = self.process_opentom(df)
+        self.data = self.intermediate_prompting(df, order, subset)
         self.expanded_df = self.build_expanded_df()
+    
+    def process_opentom(self, df):
+        """ Preprocessing of the result of OpenToM or Variant_OpenToM """
+        
+        # Identify tertiary questions
+        df["is_tertiary"] = df['answer'].str.startswith(('less', 'equally', 'more'))
+        
+        # Assign Qtype based on conditions
+        df["Qtype"] = df.apply(
+            lambda row: "[Yes, No]" if row["is_closed_question"]
+            else "[Less, Equally, More]" if row["is_tertiary"]
+            else "[Initial loc., New loc.]", 
+            axis=1
+        )
+        return df
 
     def classic_prompting(self, 
                           df: pd.DataFrame,
-                          order: Optional[str]=None,
+                          order: Optional[str]="first_order",
                           subset: Optional[int]=None):
         context = (
             "The following multiple choice question is based on the following story. The question "
@@ -36,7 +48,49 @@ class BenchmarkOpenToM(BenchmarkText):
                         "\nAnswer:", axis=1)
         
         # Remove the two rows with incorrect values
-        df.drop([4884, 4904], inplace=True)
+        # df.drop([4884, 4904, 10248, 10268], inplace=True)
+
+        # Keep only False Belief Stories
+        df = df[~df["observed"]].copy()
+
+
+        if (order is not None):
+            df = df[df["qOrder"]==order]
+
+        if (subset is not None) and isinstance(subset, int) and (subset > 0) and (subset < len(df)):
+            df = df.iloc[:subset]
+        
+        df.reset_index(drop=True, inplace=True)
+    
+        return df 
+
+    def intermediate_prompting(self, 
+                          df: pd.DataFrame,
+                          order: Optional[str]=None,
+                          subset: Optional[int]=None):
+        
+        df = self.set_candidates(df)
+        # Contexts
+        context = (
+            "The following multiple choice question is based on the following story. The question "
+            "is related to Theory-of-Mind. Read the story and then answer the question. Choose the best answer "
+            "among options provided."
+        )
+
+        # Dynamically construct the prompts
+        def generate_prompt(row):
+            # Dynamically enumerate candidates
+            enumerated_cands = "\n".join([f"({chr(97 + i)}) {cand}" for i, cand in enumerate(row["cands"])])
+            return (
+                f"{context}\nStory: {row[self.story]}\nQuestion: {row['question']}\n"
+                f"Options:\n{enumerated_cands}\nAnswer:"
+            )
+
+        # Apply the function to generate prompts
+        df["prompt"] = df.apply(generate_prompt, axis=1)
+
+        # Remove the two rows with incorrect values
+        # df.drop([4884, 4904, 10248, 10268], inplace=True)
 
         # Keep only False Belief Stories
         df = df[~df["observed"]].copy().reset_index(drop=True)
@@ -48,7 +102,7 @@ class BenchmarkOpenToM(BenchmarkText):
         if (subset is not None) and isinstance(subset, int) and (subset > 0) and (subset < len(df)):
             df = df.iloc[:subset]
     
-        return df  
+        return df 
 
     def preprocess(self):
         """
@@ -72,7 +126,11 @@ class BenchmarkOpenToM(BenchmarkText):
             [row["plot_info"]["original_place"], row["plot_info"]["move_to_place"]] if row["qOrder"] in ["first_order", "second_order"] else 
             ["positive", "negative", "neutral"]),
             axis=1)
+        
+        # Remove the two rows with incorrect values
+        df.drop([4884, 4904, 10248, 10268], inplace=True)
+        df.reset_index(drop=True, inplace=True)
         return df
     
     def __getitem__(self, idx):
-        return self.data["prompt"].iloc[idx]
+        return {"text": self.data["prompt"].iloc[idx]}

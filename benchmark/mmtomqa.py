@@ -4,7 +4,18 @@ import os
 from PIL import Image
 import pickle
 import matplotlib.pyplot as plt
-from .utils import BenchmarkVisionText
+from benchmark import BenchmarkVisionText
+
+# Question Type
+q_type = {
+    "True belief": 1.1,
+    "False belief": 1.2,
+    "Belief tracking": 1.3,
+    "Goal inference true belief": 2.1,
+    "Goal inference false belief": 2.2,
+    "Goal inference updated belief": 2.3,
+    "Goal inference future actions": 2.4
+}
 
 class BenchmarkMMToMQA(BenchmarkVisionText):
     def __init__(self, subset:Optional[int]=None):
@@ -13,19 +24,10 @@ class BenchmarkMMToMQA(BenchmarkVisionText):
         self.dir_videos = "dataset/benchmarks/MMToMQA/videos/single_agent_partial_train_240_hp_test_highres"
         self.dir_text = "dataset/benchmarks/MMToMQA/text/questions.json"
 
-        # Question Type
-        self.q_type = {
-            "True belief": 1.1,
-            "False belief": 1.2,
-            "Belief tracking": 1.3,
-            "Goal inference true belief": 2.1,
-            "Goal inference false belief": 2.2,
-            "Goal inference updated belief": 2.3,
-            "Goal inference future actions": 2.4
-        }
-
         # Extract text dataset
         df = pd.read_json(self.dir_text, lines=True)
+
+        # Choose the question type
         # self.data = df[df["question_type"]!=2.4].copy()
         self.data = df.copy()
         if subset is not None:
@@ -37,8 +39,57 @@ class BenchmarkMMToMQA(BenchmarkVisionText):
         # Rename columns
         self.data.rename(columns={"answer_list": "cands", "question": "prompt"}, inplace=True)
 
+        # Prompting
+        self.data = self.intermediate_prompting(self.data)
+        
     def __len__(self):
         return len(self.data)
+    
+    def process_df(self, df: pd.DataFrame):
+
+        #Extract candidates
+        target_phrase = "which one of the following statements is more likely to be true?"
+        df['candidates'] = df['prompt'].str.extract(f'(?i){target_phrase}\\?\\s*(.*)', expand=True)
+        df['candidates'] = df['candidates'].str.replace(" Please respond with either a or b.", "", regex=False)
+        df['cands'] = df['candidates'].str.findall(r'\(\w\)\s*[^()]+')
+        df['cands_letter'] = df['candidates'].str.findall(r'\(([a-zA-Z])\)')  # Letters including upper and lower case
+        df['cands_letter'] = df['cands_letter'].apply(lambda letters: letters + [letter.upper() for letter in letters if letter.islower()])
+        
+        # Extract Story
+        df['story'] = df['prompt'].str.extract(r'(.*)\s+Question:', expand=True)
+        df['story'] = df['story'].str.strip()
+
+        # Extract Question
+        df['question'] = df['prompt'].str.extract(r'Question:\s*(.*?)\s*\(a\)', expand=True)
+
+        return df
+    
+    def intermediate_prompting(self, df: pd.DataFrame):
+        # Process DataFrame
+        self.data = self.process_df(self.data)
+        df.rename(columns={"prompt":"preprompt"}, inplace=True)
+
+        # Contexts
+        context = (
+            "The following multiple choice question is based on the following story. The question "
+            "is related to Theory-of-Mind. Read the story and then answer the question. Choose the best answer "
+            "among options provided."
+        )
+
+        # Dynamically construct the prompts
+        def generate_prompt(row):
+            # Dynamically enumerate candidates
+            enumerated_cands = "\n".join([f"{cand}" for i, cand in enumerate(row["cands"])])
+            return (
+                f"{context}\nStory:{row['story']}\nQuestion: {row['question']}\n"
+                f"Options:\n{enumerated_cands}\nAnswer:"
+            )
+
+        # Apply the function to generate prompts
+        df["prompt"] = df.apply(generate_prompt, axis=1)
+        df.rename(columns={"answer":"answer_letter"}, inplace=True)
+
+        return df
     
     def get_frames(self, episode, selected_frames):
         # Path for the episode
@@ -75,7 +126,7 @@ class BenchmarkMMToMQA(BenchmarkVisionText):
         """ Extract the prompt with the corresponding videos frames """
         frames = self.extract_middle_frame(pos)
         prompt = self.data["prompt"].iloc[pos]
-        return prompt, frames
+        return {"text": prompt, "frames": frames}
     
     def plot_text_frames(self, pos):
         prompt, frames = self[pos]

@@ -32,7 +32,7 @@ def get_model_args(model_name, cache_dir=None, token=None):
     # Initialize the argument dictionary
     from_pretrained_args = {
         "pretrained_model_name_or_path": model_name,
-        "torch_dtype": torch.bfloat16 if torch.cuda.is_available() else torch.float32,
+        "torch_dtype": torch.bfloat16 if torch.cuda.is_available() else torch.float16,
     }
 
     # Add optional arguments if they are not None

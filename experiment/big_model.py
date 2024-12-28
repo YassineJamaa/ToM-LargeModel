@@ -35,7 +35,7 @@ from src import (
 )
 from benchmark import BenchmarkMMToMQA, BenchmarkToMi, BenchmarkFanToM, BenchmarkOpenToM
 from hardware.device_manager import setup_device
-from src.assess import call_assessment
+from data_analysis.thrash.assess import call_assessment
 
 
 def get_model_args(model_name, cache_dir=None, token=None):
