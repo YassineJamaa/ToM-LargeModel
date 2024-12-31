@@ -4,4 +4,5 @@ Logs/
 Cluster/
 data_analysis/
 Output/
+Result/
 .env
