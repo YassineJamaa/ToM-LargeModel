@@ -13,8 +13,7 @@ In ```ToMechanims```, we propose a framework that enables anyone to apply the fu
 
 ## Table of Contents
 
-1. [Setup](#setup)  
-   - [Installation](#installation)  
+1. [Setup](#setup)   
    - [Dependencies](#dependencies)  
 
 2. [Usage](#usage)  
@@ -30,15 +29,23 @@ In ```ToMechanims```, we propose a framework that enables anyone to apply the fu
 
 ### Dependencies
 
+Firstly, create an enviornment to install the packages
 ```
 conda create -n llm-loc # Create conda environment
 conda activate llm-loc # Activate environment
 pip install -r requirements.txt # Install packages
 ```
+then, create `.env` file  to store your token from huggingface and the cache directory where Foundation Models will be saved.   
+```
+# .env file
+CACHE_DIR=to/your/directory/cache
+HF_ACCESS_TOKEN=<Huggingface token>
+ ```
 
 ## Usage
+### Quick Start
 
-The project consists of implementing an adapted contrast-based analysis method, inspired by task-based fMRI, to identify causal task-relevant neural units in large language models and vision-language models. By drawing parallels to the neuroscientific approach of isolating brain regions responsible for specific task, we apply this methodology to locate and study units critical for Theory of Mind (ToM) tasks.
+
 
 ## To do:
 - [ ] Abstract
