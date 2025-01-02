@@ -4,13 +4,13 @@ from typing import Optional
 
 class BenchmarkOpenToM(BenchmarkText):
     def __init__(self, 
-                 story: Optional[str] = None,
+                 is_full: Optional[str] = True,
                  order: Optional[str]="first_order",
                  subset: Optional[int]=None):
         """ OpenToM Benchmark"""
         super().__init__()
-        if story:
-            self.story = story
+        if not is_full:
+            self.story = "plot"
         else:
             self.story = "narrative"
         df = self.preprocess()

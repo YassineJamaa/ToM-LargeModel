@@ -5,6 +5,7 @@ import sys
 import argparse
 import numpy as np
 import importlib
+import json
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from transformers import (AutoConfig,
@@ -23,6 +24,7 @@ from src import (ImportModel,
                  MeanImputation,
                  Assessment,
                  load_chat_template)
+from analysis.utils import dice_coefficient
 
 def set_model(model_checkpoint: str,
               model_type: str,
@@ -82,6 +84,7 @@ class AnalysisBlock:
                  device: str,
                  ):
         self.import_model = set_model(**model_args)
+        self.model_name = model_args["model_checkpoint"].split("/")[-1]
         self.device = device
         self.modality = None
 
@@ -124,7 +127,6 @@ class AnalysisBlock:
         elif kind == "extended":
             data_activation = self.extended_units.data_activation
         return data_activation
-
    
     def get_layer_units(self,
                         percentage: float,
@@ -156,6 +158,91 @@ class AnalysisBlock:
                                 benchmark=benchmark,
                                 modality=modality)
         return result
+    
+    def get_masks(self, percentage):
+        """ Get the mask of top-K% units of Random, Extended and Classic Localizers. """
+        # Extended Mask
+        extend_loc = LocImportantUnits("model", self.extended_units.data_activation)
+        extend_assess = Assessment(import_model=self.import_model,
+                            loc_units=extend_loc,
+                            ablation=self.get_ablation("zeroing"),
+                            device=self.device)
+        masks = extend_assess.generate_ablation_masks(percentage, num_random=10)[0]   
+
+        # Classic Mask
+        classic_loc = LocImportantUnits("model", self.classic_units.data_activation)
+        classic_assess = Assessment(import_model=self.import_model,
+                            loc_units=classic_loc,
+                            ablation=self.get_ablation("zeroing"),
+                            device=self.device)
+        classic_masks = classic_assess.generate_ablation_masks(percentage, num_random=0)[0]
+
+        masks["classic_ablate_top"] = classic_masks["ablate_top"]
+        masks["extend_ablate_top"] = masks.pop("ablate_top")
+        del masks["no_ablation"]
+        return masks
+    
+    def get_dice_coefficient(self, percentage=0.01):
+        """  Compute Dice Coefficients """
+        masks = self.get_masks(percentage)
+        dice_dict = {}
+        dice_dict["dice_classic_extend"] = dice_coefficient(masks["classic_ablate_top"], masks["extend_ablate_top"])
+        for loc_name in ["classic", "extend"]:
+            name = f"{loc_name}_ablate_top"
+            dice_random_list = []
+            for key, value in masks.items():
+                if key.startswith("ablate_random"):
+                    dice_random_list.append(dice_coefficient(value, masks[name]))
+            dice_dict[f"dice_{loc_name}_randoms"] = dice_random_list
+        
+        # serialiable masks
+        json_mask = {
+            key: value.tolist() if isinstance(value, np.ndarray) else value
+            for key, value in masks.items()
+        }
+        return dice_dict, json_mask
+    
+    def save_layers_dices(self, directory: str, percentage: float=0.01):
+        """ Save layers and Dice coefficient """
+        classic_layers = self.get_layer_units(percentage, "classic")
+        extended_layers = self.get_layer_units(percentage, "extended")
+        layers_percentage_dict = {
+            "classic_layers": classic_layers,
+            "extended_layers": extended_layers
+        }
+        dice_dict, masks = self.get_dice_coefficient(percentage)
+        json_dir = os.path.join(directory, "json_layers")
+        os.makedirs(json_dir, exist_ok=True)
+
+        # Save each variable in its own JSON file
+        with open(os.path.join(json_dir, "layer_percentage.json"), "w") as result_file:
+            json.dump(layers_percentage_dict, result_file, indent=4)
+
+        with open(os.path.join(json_dir, "dice_dict.json"), "w") as dice_file:
+            json.dump(dice_dict, dice_file, indent=4)
+
+        with open(os.path.join(json_dir, "masks.json"), "w") as masks_file:
+            json.dump(masks, masks_file, indent=4)
+
+        print(f"Percentage Layer, Dice coefficients and Masks are saved in {json_dir}")
+
+
+
+
+
+
+
+
+    
+            
+
+    
+
+
+
+
+
+
         
 
 

@@ -16,6 +16,7 @@ q_type = {
     "Goal inference updated belief": 2.3,
     "Goal inference future actions": 2.4
 }
+q_type_invert = {value: key for key, value in q_type.items()}
 
 class BenchmarkMMToMQA(BenchmarkVisionText):
     def __init__(self, subset:Optional[int]=None):
@@ -88,6 +89,10 @@ class BenchmarkMMToMQA(BenchmarkVisionText):
         # Apply the function to generate prompts
         df["prompt"] = df.apply(generate_prompt, axis=1)
         df.rename(columns={"answer":"answer_letter"}, inplace=True)
+
+        # Map the Qtype
+        df["Qtype"] = df["question_type"].map(q_type_invert)
+        # df = df[df["question_type"].isin([1.2, 2.2])].copy()
 
         return df
     

@@ -157,6 +157,24 @@ class Assessment:
             result_mask.append(probs)
         return result_mask
     
+    # Define a function to generate random seeds
+    def generate_ablation_masks(self, percentage, num_random=6, base_seed=42):
+        seeds = [base_seed + i * 1000 for i in range(num_random)]
+        assess_dict = OrderedDict([
+            ("no_ablation", None),
+            (f"ablate_top", self.loc_units.get_masked_ktop(percentage).T),
+        ])
+        assess_info = [
+            "No Ablation",
+            f"Ablation Top-{percentage:.2%}%",
+        ]
+        
+        for idx, seed in enumerate(seeds, start=1):
+            assess_dict[f"ablate_random_{idx}"] = self.loc_units.get_random_mask(percentage, seed=seed).T
+            assess_info.append(f"Random Ablation {percentage:.2%}% ({idx}/{num_random})")
+        
+        return assess_dict, assess_info
+    
     def experiment(self,
                    benchmark: BenchmarkBaseline,
                    modality: str="vision-text",
@@ -190,25 +208,8 @@ class Assessment:
         self.import_model.model.eval()
 
         # III. Set assessment script: No ablation, top-k% ablation, random-k% ablation 1, ...
-        assess_dict = OrderedDict([
-            ("no_ablation", None),
-            (f"ablate_top", self.loc_units.get_masked_ktop(percentage).T),
-            # (f"ablate_random1", self.loc_units.get_random_mask(percentage, seed=42).T),
-            # (f"ablate_random2", self.loc_units.get_random_mask(percentage, seed=12345).T),
-            # (f"ablate_random3", self.loc_units.get_random_mask(percentage, seed=98765).T),
-            # (f"ablate_random4", self.loc_units.get_random_mask(percentage, seed=2024).T),
-            # (f"ablate_random5", self.loc_units.get_random_mask(percentage, seed=56789).T),
-            # (f"ablate_random6", self.loc_units.get_random_mask(percentage, seed=2025).T),
-        ])
-        assess_info = ["No Ablation",
-                        f"Ablation Top-{percentage:.2%}%",
-                        f"Random Ablation {percentage:.2%}% (1/6)",
-                        f"Random Ablation {percentage:.2%}% (2/6)",
-                        f"Random Ablation {percentage:.2%}% (3/6)",
-                        f"Random Ablation {percentage:.2%}% (4/6)",
-                        f"Random Ablation {percentage:.2%}% (5/6)",
-                        f"Random Ablation {percentage:.2%}% (6/6)",
-                        ]
+        assess_dict, assess_info = self.generate_ablation_masks(percentage=percentage,
+                                                                num_random=3)
         
         # IV. Process benchmark data: Get the token ids for each candidates
         data = self.benchmark.data.copy()

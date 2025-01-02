@@ -20,6 +20,6 @@ class MeanImputation(ZeroingAblation):
         def hook_ablate(module, input, output):
             mask_layer = mask[idx]
             unit_indices = mask_layer.nonzero()[0]
-            output[0][:, :, unit_indices] = self.mean_units[unit_indices, idx]
+            output[0][:, :, unit_indices] = self.mean_units[unit_indices, idx].to(dtype=output[0].dtype)
         return hook_ablate
 

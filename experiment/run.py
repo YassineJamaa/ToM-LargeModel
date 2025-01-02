@@ -11,25 +11,10 @@ from transformers import (AutoModelForCausalLM,
                           LlavaNextVideoForConditionalGeneration,
                           )
 
-from src import (ImportModel,
-                 LayerUnits,
-                 AverageTaskStimuli,
-                 LocImportantUnits,
-                 ToMLocDataset,
-                 ExtendedTomLocGPT4,
-                 ZeroingAblation,
-                 MeanImputation,
-                 Assessment,
-                 setup_environment)
-
-from analysis import script
-
-from benchmark import (BenchmarkToMi,
-                    BenchmarkFanToM,
-                    BenchmarkOpenToM,
-                    BenchmarkMMToMQA)
-
+from src import setup_environment
+from analysis import experiment
 from hardware.device_manager import setup_device
+
 
 def percentage_folder(percentage:float):
     # percentage folder
@@ -52,7 +37,7 @@ def parse_arguments():
     parser.add_argument("--model_type", type=str, default="LLM", help="Model type: VLM or LLM")
     parser.add_argument("--model_func", type=str, default="AutoModelForCausalLM", help="Mode processing function for VLM")
     parser.add_argument("--model_name", type=str, default="meta-llama/Llama-3.1-8B-Instruct", help="Model checkpoint path.")
-    parser.add_argument("--benchmarks", nargs='+', default=["ToMi"], help="Benchmark that you would go into")
+    parser.add_argument("--benchmarks", nargs='+', default=["ToMi", "FanToM", "OpenToM", "MMToMQA", "Variant_FanToM"], help="Benchmark that you would go into")
     parser.add_argument("--test", type=bool, default=False, help="Subset size for benchmarks (default: the whole dataset).")
     return parser.parse_args()
 
@@ -71,10 +56,6 @@ def main():
     # Set up the device
     device, device_ids = setup_device()
 
-    # Top-K%
-    top_ks = [0.01, 0.005]
-    percentage_names = [percentage_folder(k) for k in top_ks]
-
     # Extract the model name from the model checkpoint
     model_name = model_checkpoint.split("/")[-1]
 
@@ -89,10 +70,8 @@ def main():
         "cache_dir": cache_dir,
         "model_func": model_func,
     }
-
     subset = 10 if test else None
-
-    script(model_args, device, "ToMi", result_dir, subset)
+    experiment(model_args, device, benchmarks, result_dir, subset)
     
 
 
