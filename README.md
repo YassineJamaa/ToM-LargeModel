@@ -13,15 +13,30 @@ In ```ToMechanims```, we propose a framework that enables anyone to apply the fu
 
 ## Table of Contents
 
-0. Setup
+1. [Setup](#setup)  
+   - [Installation](#installation)  
+   - [Dependencies](#dependencies)  
+
+2. [Usage](#usage)  
+   - [Quick Start](#quick-start)  
+   - [Detailed Examples](#detailed-examples)  
+
+6. [Results and Benchmarks](#results-and-benchmarks)  
+
+7. [Future Work](#future-work)
 
 
 ## Setup
-1. Create conda environment: `conda create -n llm-loc`
-2. Activate environment: `conda activate llm-loc`
-3. Install packages: `pip install -r requirements.txt`
 
-## Project Overview
+### Dependencies
+
+```
+conda create -n llm-loc # Create conda environment
+conda activate llm-loc # Activate environment
+pip install -r requirements.txt # Install packages
+```
+
+## Usage
 
 The project consists of implementing an adapted contrast-based analysis method, inspired by task-based fMRI, to identify causal task-relevant neural units in large language models and vision-language models. By drawing parallels to the neuroscientific approach of isolating brain regions responsible for specific task, we apply this methodology to locate and study units critical for Theory of Mind (ToM) tasks.
 
