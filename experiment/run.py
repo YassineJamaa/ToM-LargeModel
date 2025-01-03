@@ -29,7 +29,9 @@ def build_model_directory(model_type: str, model_name: str):
     for name_dir in ["data", "json_results"]:
         dir = os.path.join(output_dir, name_dir)
         os.makedirs(dir, exist_ok=True)
-    return output_dir    
+    return output_dir  
+
+# ["ToMi", "FanToM", "Variant_FanToM", "OpenToM", "Variant_OpenToM", "MMToMQA"],  
 
 def parse_arguments():
     """ Parse command-line arguments. """
@@ -37,7 +39,7 @@ def parse_arguments():
     parser.add_argument("--model_type", type=str, default="LLM", help="Model type: VLM or LLM")
     parser.add_argument("--model_func", type=str, default="AutoModelForCausalLM", help="Mode processing function for VLM")
     parser.add_argument("--model_name", type=str, default="meta-llama/Llama-3.1-8B-Instruct", help="Model checkpoint path.")
-    parser.add_argument("--benchmarks", nargs='+', default=["ToMi", "FanToM", "OpenToM", "MMToMQA", "Variant_FanToM"], help="Benchmark that you would go into")
+    parser.add_argument("--benchmarks", nargs='+', default=["ToMi"], help="Benchmark that you would go into")
     parser.add_argument("--test", type=bool, default=False, help="Subset size for benchmarks (default: the whole dataset).")
     return parser.parse_args()
 

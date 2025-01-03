@@ -209,7 +209,7 @@ class Assessment:
 
         # III. Set assessment script: No ablation, top-k% ablation, random-k% ablation 1, ...
         assess_dict, assess_info = self.generate_ablation_masks(percentage=percentage,
-                                                                num_random=3)
+                                                                num_random=10)
         
         # IV. Process benchmark data: Get the token ids for each candidates
         data = self.benchmark.data.copy()

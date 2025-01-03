@@ -19,11 +19,11 @@ from torch.utils.data import Dataset
 config = {
     "benchmark_dict": {
         "ToMi": BenchmarkToMi,
-        #"FanToM": BenchmarkFanToM,
+        "FanToM": BenchmarkFanToM,
         "Variant_FanToM": partial(BenchmarkFanToM, is_full=False),
-        #"OpenToM": BenchmarkOpenToM,
-        #"Variant_OpenToM": partial(BenchmarkOpenToM, is_full=False),
-        #"MMToMQA": BenchmarkMMToMQA,
+        "OpenToM": BenchmarkOpenToM,
+        "Variant_OpenToM": partial(BenchmarkOpenToM, is_full=False),
+        "MMToMQA": BenchmarkMMToMQA,
     },
     "benchmark_group":{
         "ToMi": None,
@@ -34,8 +34,8 @@ config = {
         "MMToMQA": "Qtype",
     },
     "percentages": [0.01],
-    "imputations": ["zeroing", "mean"],
-    "localizer_types": ["classic", "extended"]
+    "imputations": ["mean"],
+    "localizer_types": ["classic", "extend"]
 }
 
 def compute_t_confidence_interval(data, confidence=0.95):
@@ -212,7 +212,7 @@ def script(block: AnalysisBlock, device: str, benchmark_name: str, directory: st
 
 def experiment(model_args: dict, device: str, benchmarks:list, directory: str, subset: int = 10):
     block = AnalysisBlock(model_args, device)
-    flag = True
+    flag = False
     for benchmark_name in benchmarks:
         if flag:
             script(block, device, benchmark_name, directory, subset, flag)
