@@ -88,12 +88,11 @@ class BenchmarkMMToMQA(BenchmarkVisionText):
 
         # Apply the function to generate prompts
         df["prompt"] = df.apply(generate_prompt, axis=1)
-        df.rename(columns={"answer":"answer_letter"}, inplace=True)
+        df["answer_letter"] = df["answer"]
 
         # Map the Qtype
         df["Qtype"] = df["question_type"].map(q_type_invert)
         # df = df[df["question_type"].isin([1.2, 2.2])].copy()
-
         return df
     
     def get_frames(self, episode, selected_frames):

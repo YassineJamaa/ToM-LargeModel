@@ -34,8 +34,8 @@ config = {
         "MMToMQA": "Qtype",
     },
     "percentages": [0.01],
-    "imputations": ["mean"],
-    "localizer_types": ["classic", "extend"]
+    "imputations": ["zeroing"],
+    "localizer_types": ["classic", "extended"]
 }
 
 def compute_t_confidence_interval(data, confidence=0.95):
@@ -212,7 +212,7 @@ def script(block: AnalysisBlock, device: str, benchmark_name: str, directory: st
 
 def experiment(model_args: dict, device: str, benchmarks:list, directory: str, subset: int = 10):
     block = AnalysisBlock(model_args, device)
-    flag = False
+    flag = True
     for benchmark_name in benchmarks:
         if flag:
             script(block, device, benchmark_name, directory, subset, flag)
