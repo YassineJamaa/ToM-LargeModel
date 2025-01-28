@@ -255,3 +255,122 @@ class BenchmarkFanToM(BenchmarkText):
     
     def __getitem__(self, idx):
         return {"text": self.data["prompt"].iloc[idx]}
+
+
+class FanToMPromptEngineering(BenchmarkText):
+    def __init__(self, 
+                 is_full: Optional[bool] = True,
+                 subset: Optional[int]=None):
+        """ 
+        """
+        super().__init__()
+        if is_full:
+            self.story = "full_context"
+        else:
+            self.story = "short_context"
+
+        df = self.load()
+        self.data = self.intermediate_prompting(df, subset)
+        self.expanded_df = self.build_expanded_df()
+    
+    def load(self):
+        dpath = build_data(FANTOM)
+        file = os.path.join(dpath, "fantom_v1.json")
+        df = pd.read_json(file)
+        return df
+    
+    def classic_prompting(self,
+                          df: pd.DataFrame,
+                          subset: Optional[int]=None):
+        # Extract lists of each key into separate columns
+        df["question"] = df["beliefQAs"].apply(lambda x: x[0]["question"])
+        df["order"] = df["beliefQAs"].apply(lambda x: x[0]["tom_type"])
+        df["question_type"] = df["beliefQAs"].apply(lambda x: x[0]["question_type"])
+        df["answer"] = df["beliefQAs"].apply(lambda x: x[0]["correct_answer"])
+        df["wrong_answer"] = df["beliefQAs"].apply(lambda x: x[0]["wrong_answer"])
+        df["cands"] = df.apply(lambda row: [row["answer"] , row["wrong_answer"]], axis=1)
+        # Apply the function to each story and create a new column
+        df["characters"] = df["full_context"].apply(extract_characters)
+
+
+        context_template  = (
+            "The following multiple choice question is based on the story with the following characters: {characters}. The question "
+            "is related to Theory-of-Mind. Read the story and then answer the question. Choose the best answer "
+            "among options provided."
+        )
+
+        def format_characters(characters_list):
+            if len(characters_list) > 1:
+                return ", ".join(characters_list[:-1]) + " and " + characters_list[-1]
+            return characters_list[0]
+
+        df["prompt"] = df.apply(
+            lambda row: (
+                f"{context_template.format(characters=format_characters(row['characters']))}\nStory:\n{row[self.story]}\nQuestion: {row['question']}\nOptions:\n" +
+                "\n".join([f"- {cand}" for cand in row["cands"]]) +
+                "\nAnswer:"
+            ),
+            axis=1
+        )
+
+        # Keep only the False Belief questions
+        df = df[df["question_type"] == 'tom:belief:inaccessible'].copy().reset_index(drop=True)
+
+        if (subset is not None) and isinstance(subset, int) and (subset > 0) and (subset < len(df)):
+            df = df.iloc[:subset]
+        
+        return df
+    
+    def intermediate_prompting(self,
+                          df: pd.DataFrame,
+                          subset: Optional[int]=None):
+        # Extract lists of each key into separate columns
+        df["question"] = df["beliefQAs"].apply(lambda x: x[0]["question"])
+        df["order"] = df["beliefQAs"].apply(lambda x: x[0]["tom_type"])
+        df["question_type"] = df["beliefQAs"].apply(lambda x: x[0]["question_type"])
+        df["answer"] = df["beliefQAs"].apply(lambda x: x[0]["correct_answer"])
+        df["wrong_answer"] = df["beliefQAs"].apply(lambda x: x[0]["wrong_answer"])
+
+        # Get the candidates and shuffle them
+        random.seed(42)
+        df["cands"] = df.apply(lambda row: random.sample([row["answer"], row["wrong_answer"]], 2), axis=1)
+
+        # Apply the function to each story and create a new column
+        df["characters"] = df["full_context"].apply(extract_characters)
+
+        df = self.set_candidates(df)
+
+        # Contexts
+        context_template  = (
+            "The following multiple choice question is based on a dialogue with the following characters: {characters}. The question "
+            "is related to Theory-of-Mind. Read the story and then answer the question. Choose the best answer "
+            "among options provided."
+        )
+
+        def format_characters(characters_list):
+            if len(characters_list) > 1:
+                return ", ".join(characters_list[:-1]) + " and " + characters_list[-1]
+            return characters_list[0]
+
+        # Dynamically construct the prompts
+        def generate_prompt(row):
+            # Dynamically enumerate candidates
+            enumerated_cands = "\n".join([f"{chr(97 + i)}. {cand}" for i, cand in enumerate(row["cands"])])
+            return (
+                f"{context_template.format(characters=format_characters(row['characters']))}\nStory:{row[self.story]}\nQuestion: {row['question']}\n"
+                f"Options:\n{enumerated_cands}\nAnswer:"
+        )
+
+        # Apply the function to generate prompts
+        df["prompt"] = df.apply(generate_prompt, axis=1)
+
+        # Keep only the False Belief questions
+        df = df[df["question_type"] == 'tom:belief:inaccessible'].copy().reset_index(drop=True)
+
+        if (subset is not None) and isinstance(subset, int) and (subset > 0) and (subset < len(df)):
+            df = df.iloc[:subset]
+        
+        return df
+    
+    def __getitem__(self, idx):
+        return {"text": self.data["prompt"].iloc[idx]}

@@ -41,6 +41,7 @@ def parse_arguments():
     parser.add_argument("--model_name", type=str, default="meta-llama/Llama-3.1-8B-Instruct", help="Model checkpoint path.")
     parser.add_argument("--benchmarks", nargs='+', default=["ToMi", "FanToM", "Variant_FanToM", "OpenToM", "Variant_OpenToM", "MMToMQA"], help="Benchmark that you would go into")
     parser.add_argument("--test", type=bool, default=False, help="Subset size for benchmarks (default: the whole dataset).")
+    parser.add_argument("--cache", type=str, default="CACHE_DIR", help="Temporary: two cache.")
     return parser.parse_args()
 
 def main():
@@ -51,9 +52,10 @@ def main():
     model_func = args.model_func
     benchmarks = args.benchmarks
     test = args.test
+    cache = args.cache
 
     # Set up the environment
-    token, cache_dir = setup_environment()
+    token, cache_dir = setup_environment(cache=cache)
 
     # Set up the device
     device, device_ids = setup_device()

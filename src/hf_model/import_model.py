@@ -33,7 +33,8 @@ class ImportModel:
         # Add Chat Template to Tokenizer & Processor
         #self.tokenizer.chat_template = chat_template
         if self.processor:
-            self.processor.chat_template = chat_template
+            if chat_template:
+                self.processor.chat_template = chat_template
             self.method_process = self.processor
         else:
             self.method_process = self.tokenizer

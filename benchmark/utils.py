@@ -12,10 +12,10 @@ class BenchmarkBaseline(Dataset):
         def generate_tokens(candidates):
             num_candidates = len(candidates)
             letters = [chr(97 + i) for i in range(num_candidates)]  # Generate letters a, b, c, ...
-            uppercase = [f"{letter.upper()}" for letter in letters]
+            # uppercase = [f"{letter.upper()}" for letter in letters]
             lowercase = [f"{letter}" for letter in letters]
             # Flatten into a 1D list
-            return lowercase + uppercase
+            return lowercase
 
         def map_answer_to_letter(candidates, answer):
             letters = [chr(97 + i) for i in range(len(candidates))]  # Generate letters a, b, c, ...

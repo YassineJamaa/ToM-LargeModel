@@ -3,6 +3,7 @@ from torch.utils.data import Dataset
 from .import_model import ImportModel
 from benchmark import BenchmarkBaseline
 from tqdm import tqdm
+from functools import partial
 
 
 def average_tokens_layers(activation):
@@ -16,7 +17,8 @@ class LayerUnits:
                  import_model: ImportModel, 
                  localizer: Dataset,
                  device, 
-                 method:str="average"):
+                 method:str="average",
+                 args_tokenizer: dict={}):
         self.import_model = import_model
         self.language_model = self.import_model.get_language_model()
         self.data = localizer
@@ -26,7 +28,7 @@ class LayerUnits:
 
         # Dynamically choose the right inputs function
         if self.import_model.model_type == "LLM":
-            self.get_inputs = self.get_inputs_llm
+            self.get_inputs = partial(self.get_inputs_llm, **args_tokenizer)
         elif self.import_model.model_type == "VLM":
             self.get_inputs = self.get_inputs_vlm
         else:
@@ -57,20 +59,11 @@ class LayerUnits:
             activation[:, :, :, idx] = output[0].squeeze(0).to(self.device)
         return hook_layers
 
-    def get_inputs_llm(self, text):
-        return self.import_model.tokenizer(text, return_tensors="pt").to(self.device)
+    def get_inputs_llm(self, text, **kwargs):
+        return self.import_model.tokenizer(text, return_tensors="pt", **kwargs).to(self.device)
 
-    def get_inputs_vlm(self, text):
-        conversation = [
-            {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": text},
-                ],
-            },
-        ]
-        prompt = self.import_model.processor.apply_chat_template(conversation, add_generation_prompt=True)
-        return self.import_model.processor(text=prompt, return_tensors="pt").to(self.device)
+    def get_inputs_vlm(self, text, **kwargs):
+        return self.import_model.processor(text, return_tensors="pt", **kwargs).to(self.device)
 
     def extract_layer_units(self, idx, group_name="positive"):
         self.clear_hooks()

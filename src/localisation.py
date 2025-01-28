@@ -40,6 +40,8 @@ class LocImportantUnits:
         return ranked.reshape(self.t_values.shape)
     
     def get_masked_ktop(self, percentage):
+        if percentage==0:
+            return np.zeros_like(self.t_values, dtype=np.int64)
         num_top_elements = int(self.t_values.size * percentage)
 
         # Flatten the matrix, find the threshold value for the top 1%
