@@ -116,7 +116,7 @@ class AverageTaskStimuli:
         else:
             raise ValueError(f"Unsupported Benchmark type: {self.import_model.model_type}")
         
-        self.avg_activation = self.extract_all_units()
+        self.avg_activation = self.extract_all_units().to("cpu")
         self.clear_hooks()
     
     def reset_data_activation(self):
@@ -179,7 +179,7 @@ class AverageTaskStimuli:
     
     def extract_all_units(self):
         self.reset()
-        for idx in range(len(self.benchmark)):
+        for idx in tqdm(range(len(self.benchmark)), desc="Processing Mean Imputation"):
             self.data_activation[idx,:,:] = self.extract_layer_units(idx)
         return self.data_activation.mean(dim=0)
 
