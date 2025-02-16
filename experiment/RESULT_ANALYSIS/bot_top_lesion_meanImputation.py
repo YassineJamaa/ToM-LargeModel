@@ -11,7 +11,7 @@ from glob import glob
 import torch
 import json
 
-from benchmark import FanToMPromptEngineering, ToMiPromptEngineering, MMToMQAPromptEngineering, MATHBenchmark, OpenToMPromptEngineering
+from benchmark import BenchmarkMMToMQA, BenchmarkToMi, BenchmarkOpenToM, BenchmarkFanToM, BenchmarkBaseline, BenchmarkVisionText, OpenToMPromptEngineering
 from src import (
                 AssessmentTopK,
                 Assessmentv4,
@@ -26,8 +26,10 @@ from src import (
                  MeanImputation,
                  ExtendedTomLocGPT4,
                  MDLocDataset,
+                 get_masked_ktop,
                  get_masked_kbot,
-                 get_masked_ktop)
+                 get_masked_middle,
+                 get_masked_random)
 from analysis import set_model
 
 def parse_arguments():
@@ -38,7 +40,6 @@ def parse_arguments():
     parser.add_argument("--cache", type=str, default="CACHE_DIR", help="Temporary: two cache.")
     return parser.parse_args()
 
-
 def main():
     args = parse_arguments()
     model_checkpoint = args.model_name
@@ -46,7 +47,6 @@ def main():
     model_type = "LLM"
     cache = args.cache
 
-    
     token, cache_dir = setup_environment(cache=cache)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_args = {
@@ -57,61 +57,49 @@ def main():
         "model_func": model_func,
     }
     llm = set_model(**model_args)
-    model_name = model_checkpoint.split("/")[-1]
 
-    # ToM Localizer
+    
     classic_tom = ToMLocDataset()
     classic_units = LayerUnits(import_model = llm, localizer = classic_tom, device = device)
     classic_loc = LocImportantUnits("classic", classic_units.data_activation)
-
-    # MD Localizer
-    md = MDLocDataset()
-    md_units = LayerUnits(import_model = llm, localizer = md, device = device)
-    md_loc = LocImportantUnits("classic", md_units.data_activation)
-
-    # Folder where to save the result
-    folder = os.path.join("Result", "EXPERIMENT_RESULT", model_name, "No_lesion")
-    os.makedirs(os.path.dirname(folder), exist_ok=True)
-
-    # ToM Benchmarks
-    math = MATHBenchmark()
-    tomi = ToMiPromptEngineering()
-    fantom = FanToMPromptEngineering(is_full=False)
-    opentom = OpenToMPromptEngineering(is_full=False)
-    tom_benchmarks = [opentom]
     
-    # Assessment
-    zeroing = ZeroingAblation()
-    assess = Assessmentv4(import_model=llm,
-                        ablation=zeroing,
-                        device=device)
-    
-    print(f"Benchmark Analysis for {model_name}...")
-    percentage=0.0 # No Lesion: pct=0.0%
-    for benchmark in tom_benchmarks:
-        nomask = get_masked_kbot(classic_loc, percentage)
-        res = assess.experiment(benchmark, nomask, num_random=0, no_lesion=False)
-        prediction = res["predict_ablate_top"].tolist()
+    percentages = np.array([0.0, 0.005, 0.01, 0.02, 0.04, 0.08, 0.1, 0.15, 0.2, 0.25])
+    planning = {
+        "short_OpenToM": False,
+        "full_OpenToM": True
+    }
+    for key, val in planning.items():
+        benchmark = OpenToMPromptEngineering(is_full=val)
+        avg_stim = AverageTaskStimuli(benchmark, llm, device)
+        mean_imputation = MeanImputation(avg_stim.avg_activation)
+        assess = Assessmentv4(import_model=llm,
+                            ablation=mean_imputation,
+                            device=device)
+        bot_predictions = []
+        top_predictions = []
+        for idx, percentage in enumerate(percentages):
+            mask_bot = get_masked_kbot(classic_loc, percentage)
+            mask_top = get_masked_ktop(classic_loc, percentage)
+            res_bot = assess.experiment(benchmark, mask_bot, num_random=0, no_lesion=False)
+            res_top = assess.experiment(benchmark, mask_top, num_random=0, no_lesion=False)
+            bot_predictions.append(res_bot["predict_ablate_top"].tolist())
+            top_predictions.append(res_top["predict_ablate_top"].tolist())
 
-        # print Chance Threshold & Accuracy
-        print(f"  >>{type(benchmark).__name__} Analysis...")
-        chance_threshold = benchmark.data["answer_letter"].value_counts(normalize=True).max()
-        accuracy = (res["predict_ablate_top"] == res["answer_letter"]).mean()
-        print(f"  >> Chance Threshold = {chance_threshold:.2%}. Accuracy Model without Lesion= {accuracy:.2%}")
-        
-        # Save json file
-        json_file = os.path.join(folder, f"short_{type(benchmark).__name__}_nolesion.json")
-        os.makedirs(os.path.dirname(json_file), exist_ok=True)
-
+        model_name = model_checkpoint.split("/")[-1]
         data_dict = {
             "benchmark": benchmark.data.to_dict(orient="records"),
-            "predictions": [prediction],
-            "percentages": [percentage]
+            "bot_predictions": bot_predictions,
+            "top_predictions": top_predictions,
+            "percentages": percentages.tolist()
         }
+        model_name = model_checkpoint.split("/")[-1]
+        json_file = os.path.join("Result", "EXPERIMENT_RESULT", model_name, "Lesion", key, "bot_top_lesion_MeanImputation.json")
+        os.makedirs(os.path.dirname(json_file), exist_ok=True)
         with open(json_file, "w") as f:
             json.dump(data_dict, f, indent=4)
-        
-        print(f"Assessment Done!")
+    
+    print(f"MeanImputation on {model_name} is done!")
+    
 
 if __name__ == "__main__":
     main()
