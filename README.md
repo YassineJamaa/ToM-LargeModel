@@ -11,6 +11,9 @@ In ```ToMechanims```, we propose a framework that enables anyone to apply the fu
   <img src="assets/framework-v2.5.jpg" alt="Description 1" width="45%" />
   <img src="assets/contrast-diagram.png" alt="Description 2" width="45%" />
 </p>
+<p align="center">
+  <em>Figure 1: Left – Description of image 1. Right – Description of image 2.</em>
+</p>
 
 # Abstract
 
