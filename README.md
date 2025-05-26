@@ -8,8 +8,7 @@ In ```ToMechanims```, we propose a framework that enables anyone to apply the fu
 
 
 <p align="center">
-  <img src="assets/framework-v2.5.jpg" alt="Description 1" width="45%" />
-  <img src="assets/contrast-diagram.png" alt="Description 2" width="45%" />
+  <img src="assets/worflow.jpg" alt="Description 1" width="70%" />
 </p>
 <p align="center">
   <em>Figure 1: Framework workflow. (a) outlines the general process for identifying the causal units that underpin ToM or MD reasoning in foundation models. The items highlighted in red represent the various options available at each step (e.g., different localizer types, benchmarks, and lesion methods).(b) zooms in on the three key decision stages for isolating specific activation units. First, a localizer contrasts positive and negative samples to pinpoint relevant regions of the model. Next, a t-distribution is generated to quantify the significance of each unit’s activation differences. Finally, a unit selection step identifies and ranks the top candidates for further causal analysis.</em>
