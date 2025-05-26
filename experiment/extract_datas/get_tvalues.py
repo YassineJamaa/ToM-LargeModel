@@ -20,12 +20,14 @@ from src import (
                  load_chat_template,
                  LayerUnits,
                  LocImportantUnits,
+                 LocNoAbs,
                  ZeroingAblation,
                  ToMLocDataset,
                  AverageTaskStimuli,
                  MeanImputation,
                  ExtendedTomLocGPT4,
                  MDLocDataset,
+                 LangLocDataset,
                  get_masked_ktop,
                  get_masked_kbot,
                  get_masked_middle,
@@ -37,6 +39,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Run experiments with language models.")
     parser.add_argument("--model_func", type=str, default="AutoModelForCausalLM", help="Mode processing function for VLM")
     parser.add_argument("--model_name", type=str, default="meta-llama/Llama-3.1-8B-Instruct", help="Model checkpoint path.")
+    parser.add_argument("--localizer", type=str, default="ToM", help="Localizer")
     parser.add_argument("--cache", type=str, default="CACHE_DIR", help="Temporary: two cache.")
     return parser.parse_args()
 
@@ -46,6 +49,7 @@ def main():
     model_func = args.model_func
     model_type = "LLM"
     cache = args.cache
+    localizer = args.localizer
 
     token, cache_dir = setup_environment(cache=cache)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -59,11 +63,16 @@ def main():
     llm = set_model(**model_args)
     model_name = model_checkpoint.split("/")[-1]
 
-    classic_tom = ToMLocDataset()
-    classic_units = LayerUnits(import_model = llm, localizer = classic_tom, device = device)
-    classic_loc = LocImportantUnits("classic", classic_units.data_activation)
-
-    npy_file = os.path.join("Result", "TVALUES_SAVING", model_name, f"{model_name}_tvalues.npy")
+    if localizer == "MD":
+        loc_data = MDLocDataset()
+    elif localizer == "ToM":
+        loc_data = ToMLocDataset()
+    elif localizer == "Language":
+        loc_data = LangLocDataset()
+        
+    classic_units = LayerUnits(import_model = llm, localizer = loc_data, device = device)
+    classic_loc = LocNoAbs("classic", classic_units.data_activation)
+    npy_file = os.path.join("Result", f"tvalue_noabs_{localizer}", model_name, f"{model_name}_tvalues.npy")
     os.makedirs(os.path.dirname(npy_file), exist_ok=True)
     np.save(npy_file, classic_loc.t_values)
 

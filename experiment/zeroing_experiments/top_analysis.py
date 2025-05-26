@@ -11,10 +11,10 @@ from glob import glob
 import torch
 import json
 
-from benchmark import BenchmarkMMToMQA, BenchmarkToMi, BenchmarkOpenToM, BenchmarkFanToM, BenchmarkBaseline, BenchmarkVisionText, ToMiPromptEngineering, MMToMQAPromptEngineering, MATHBenchmark
+from benchmark import BenchmarkMMToMQA, BenchmarkToMi, BenchmarkOpenToM, BenchmarkFanToM, BenchmarkBaseline, BenchmarkVisionText, ToMiPromptEngineering, MMToMQAPromptEngineering, MATHBenchmark, OpenToMPromptEngineering
 from src import (
                 AssessmentTopK,
-                Assessmentv4,
+                Assessmentv6,
                 setup_environment,
                  ImportModel,
                  load_chat_template,
@@ -26,7 +26,8 @@ from src import (
                  MeanImputation,
                  ExtendedTomLocGPT4,
                  MDLocDataset,
-                 get_masked_random)
+                 get_masked_kbot,
+                 get_masked_ktop)
 from analysis import set_model
 
 def parse_arguments():
@@ -35,9 +36,15 @@ def parse_arguments():
     parser.add_argument("--model_func", type=str, default="AutoModelForCausalLM", help="Mode processing function for VLM")
     parser.add_argument("--model_name", type=str, default="meta-llama/Llama-3.1-8B-Instruct", help="Model checkpoint path.")
     parser.add_argument("--cache", type=str, default="CACHE_DIR", help="Temporary: two cache.")
+    parser.add_argument("--localizer", type=str, default="ToM", help="Either: MD or ToM")
+    parser.add_argument("--benchmark_name", type=str, default="FanToM", choices=["FanToM", "MATH", "OpenToM"], help="Either: MD or ToM")
     return parser.parse_args()
 
-
+benchmark_config = {
+    "MATH": MATHBenchmark,
+    "FanToM": BenchmarkFanToM,
+    "OpenToM": OpenToMPromptEngineering
+}
 
 def main():
     args = parse_arguments()
@@ -45,6 +52,8 @@ def main():
     model_func = args.model_func
     model_type = "LLM"
     cache = args.cache
+    localizer = args.localizer
+    benchmark_name = args.benchmark_name
 
     token, cache_dir = setup_environment(cache=cache)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -57,42 +66,48 @@ def main():
     }
     llm = set_model(**model_args)
 
-    
-    classic_tom = ToMLocDataset()
-    classic_units = LayerUnits(import_model = llm, localizer = classic_tom, device = device)
-    classic_loc = LocImportantUnits("classic", classic_units.data_activation)
-    benchmark = ToMiPromptEngineering()
+    if localizer == "MD":
+        loc_data = MDLocDataset()
+    elif localizer == "ToM":
+        loc_data = ToMLocDataset()
+
+    units = LayerUnits(import_model = llm, localizer = loc_data, device = device)
+    loc = LocImportantUnits("classic", units.data_activation)
+
     zeroing = ZeroingAblation()
-    assess = Assessmentv4(import_model=llm,
+    assess = Assessmentv6(import_model=llm,
                         ablation=zeroing,
                         device=device)
     
-    percentages = np.linspace(0.0, 0.025, 26)[::2]
-    # percentages = np.array([0.005, 0.01])
-    random_predictions = []
+    ################################# BENCHMARK #####################
+    benchmark = benchmark_config[benchmark_name](subset=None)
+    ###################################################################
+    
+    percentages = np.array([0.01, 0.02, 0.05, 0.1, 0.15, 0.25])
+    # bot_predictions = []
+    top_predictions = []
     dataframe = benchmark.data.to_dict(orient="records")
-    n_random = 15
     for idx, percentage in enumerate(percentages):
-        predictions_template = []
-        for seed in range(n_random):
-            mask_random = get_masked_random(classic_loc, percentage, seed)
-            res_random = assess.experiment(benchmark, mask_random, num_random=0, no_lesion=False)
-            predictions_template.append(res_random["predict_ablate_top"].tolist())
-        random_predictions.append(predictions_template)
+        # mask_bot = get_masked_kbot(loc, percentage)
+        mask_top = get_masked_ktop(loc, percentage)
+        # res_bot = assess.experiment(benchmark, mask_bot, num_random=0, no_lesion=False)
+        res_top = assess.experiment(benchmark, mask_top, num_random=0, no_lesion=False)
+        # bot_predictions.append(res_bot["predict_ablate_top"].tolist())
+        top_predictions.append(res_top["predict_ablate_top"].tolist())
     
     model_name = model_checkpoint.split("/")[-1]
-    json_file= os.path.join("Result", "PERCENTAGES_ANALYSIS", f"RANDOM_top1_ANALYSIS", model_name, f"{type(benchmark).__name__}_randoms.json")
+    json_file= os.path.join("Result", "TOP_EXPERIMENT_FANTOM_MD", model_name, f"{type(benchmark).__name__}_top.json") #CHANGE
     data_dict = {
-        "benchmark": benchmark.data.to_dict(orient="records"),
         "percentages": percentages.tolist(),
-        "seeds": np.arange(n_random).tolist() ,
-        "random_predictions": random_predictions,
+        "benchmark": dataframe,
+        # "bot_predictions": bot_predictions,
+        "top_predictions": top_predictions
     }
     os.makedirs(os.path.dirname(json_file), exist_ok=True)
     with open(json_file, "w") as f:
         json.dump(data_dict, f, indent=4)
     
-    print(f"Random analysis Task for {model_name}: Done!")
+    print(f"Top Analysis done.")
 
 if __name__ == "__main__":
     main()

@@ -3,9 +3,18 @@ import numpy as np
 import io
 from PIL import Image
 import re
-from .utils import BenchmarkText
+from .utils import BenchmarkVisionText
 
-class MMStarBenchmark(BenchmarkText):
+
+def process_image(img):
+    # Convert to grayscale (black & white)
+    img = img.convert("L")  
+    # Resize if larger than 600x600
+    if img.size[0] > 650 or img.size[1] > 600:
+        img = img.resize((650, 650), Image.LANCZOS)
+    return img
+
+class MMStarBenchmark(BenchmarkVisionText):
     
     def __init__(self, subset: int=None):  
         super().__init__()
@@ -27,7 +36,7 @@ class MMStarBenchmark(BenchmarkText):
             enumerated_cands = "\n".join([f"{chr(97 + i)}. {cand}" for i, cand in enumerate(row["cands"])])
             return (
                 f"{row["context_options"]}\nQuestion: {row['question']}\n"
-                f"Options:\n{enumerated_cands}\nAnswer:"
+                f"Options:\n{enumerated_cands}" #\nAnswer:"
             )
         
         # Apply the function to generate prompts
@@ -44,10 +53,11 @@ class MMStarBenchmark(BenchmarkText):
         # Convert raw byte image into PIL image
         df.rename(columns={"image": "raw_byte_img"}, inplace=True)
         df["image"] = df["raw_byte_img"].apply(lambda x: Image.open(io.BytesIO(x)))
+        df['image'] = df['image'].apply(process_image)
 
         # Extract cands from question and extract the question
         df.rename(columns={"question": "raw_question"}, inplace=True)
-        df["question"] = df["raw_question"].apply(lambda x: x.split("\nOptions:")[0])
+        df["question"] = df["raw_question"].apply(lambda x: re.split(r"\n(?:Options:|Choices:)", re.sub(r"(?i)^.*?question:", "", x, flags=re.DOTALL))[0])
 
         # Extract options from question_raw
         def extract_candidates(question):
@@ -109,6 +119,6 @@ class MMStarBenchmark(BenchmarkText):
         """ Extract the prompt with the corresponding videos frames """
         frames = self.data["image"].iloc[pos]
         prompt = self.data["prompt"].iloc[pos]
-        return {"text": prompt, "frames": frames}
+        return {"text": prompt, "frames": [frames]}
 
 mmstar = MMStarBenchmark()        

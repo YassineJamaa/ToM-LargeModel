@@ -21,6 +21,7 @@ class LayerUnits:
                  args_tokenizer: dict={}):
         self.import_model = import_model
         self.language_model = self.import_model.get_language_model()
+        self.prelayer_model = self.import_model.get_prelayers_model()
         self.data = localizer
         self.device = device
         self.data_activation = None
@@ -47,7 +48,7 @@ class LayerUnits:
         self.data_activation = torch.zeros(2, len(self.data), embd_size, n_layers, device=self.device)
     
     def clear_hooks(self):
-        for layer in self.language_model.model.layers:
+        for layer in self.prelayer_model.layers:
             layer._forward_hooks.clear()
     
     def reset(self):
@@ -63,20 +64,20 @@ class LayerUnits:
         return self.import_model.tokenizer(text, return_tensors="pt", **kwargs).to(self.device)
 
     def get_inputs_vlm(self, text, **kwargs):
-        return self.import_model.processor(text, return_tensors="pt", **kwargs).to(self.device)
+        return self.import_model.processor(text=text, return_tensors="pt", **kwargs).to(self.device)
 
     def extract_layer_units(self, idx, group_name="positive"):
         self.clear_hooks()
         self.import_model.model.eval()
 
         text = self.data[idx][self.group[group_name]]
-        inputs = self.get_inputs(text)
+        inputs = self.get_inputs_llm(text)
         n_tokens = inputs["input_ids"].shape[1]
         embd_size = self.import_model.get_embd_size()
         n_layers = self.import_model.get_layers()
         activation = torch.zeros(1, n_tokens, embd_size, n_layers, device=self.device)
 
-        for i, layer in enumerate(self.language_model.model.layers):
+        for i, layer in enumerate(self.prelayer_model.layers):
             layer.register_forward_hook(self.get_hook_layers(i, activation))
 
         with torch.no_grad():
@@ -98,6 +99,7 @@ class AverageTaskStimuli:
         self.import_model = import_model
         self.data_activation = None
         self.language_model = self.import_model.get_language_model()
+        self.prelayer_model = self.import_model.get_prelayers_model()
         self.device = device 
 
         # Dynamically choose the right inputs function
@@ -116,7 +118,8 @@ class AverageTaskStimuli:
         else:
             raise ValueError(f"Unsupported Benchmark type: {self.import_model.model_type}")
         
-        self.avg_activation = self.extract_all_units().to("cpu")
+        self.data_activation = self.extract_all_units().to("cpu")
+        self.avg_activation = self.data_activation.mean(dim=0)
         self.clear_hooks()
     
     def reset_data_activation(self):
@@ -125,7 +128,7 @@ class AverageTaskStimuli:
         self.data_activation = torch.zeros(len(self.benchmark), embd_size, n_layers, device=self.device)
     
     def clear_hooks(self):
-        for layer in self.language_model.model.layers:
+        for layer in self.prelayer_model.layers:
             layer._forward_hooks.clear()
     
     def reset(self):
@@ -163,13 +166,13 @@ class AverageTaskStimuli:
         self.clear_hooks()
         self.import_model.model.eval()
         text = self.get_row(idx)  
-        inputs = self.get_inputs(text)
+        inputs = self.get_inputs_llm(text) # Tokenize instead of processor for VLM
         n_tokens = inputs["input_ids"].shape[1]
         embd_size = self.import_model.get_embd_size()
         n_layers = self.import_model.get_layers()
 
         activation = torch.zeros(n_tokens, embd_size, n_layers, device=self.device)
-        for i, layer in enumerate(self.language_model.model.layers):
+        for i, layer in enumerate(self.prelayer_model.layers):
             layer.register_forward_hook(self.get_hook_layers(i, activation))
         
         with torch.no_grad():
@@ -181,7 +184,7 @@ class AverageTaskStimuli:
         self.reset()
         for idx in tqdm(range(len(self.benchmark)), desc="Processing Mean Imputation"):
             self.data_activation[idx,:,:] = self.extract_layer_units(idx)
-        return self.data_activation.mean(dim=0)
+        return self.data_activation
 
 
 

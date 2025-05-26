@@ -56,16 +56,16 @@ def main():
     llm = set_model(**model_args)
 
     
-    classic_tom = ToMLocDataset()
-    classic_units = LayerUnits(import_model = llm, localizer = classic_tom, device = device)
-    classic_loc = LocImportantUnits("classic", classic_units.data_activation)
-    benchmark = ToMiPromptEngineering()
-    avg_stim = AverageTaskStimuli(benchmark, llm, device)
-    mean_imputation = MeanImputation(avg_stim.avg_activation)
-    model_name = model_checkpoint.split("/")[-1]
-    npy_file = os.path.join("dataset", "mean_imputation", model_name, f"{type(benchmark).__name__}_meanImputation.npy")
-    os.makedirs(os.path.dirname(npy_file), exist_ok=True)
-    np.save(npy_file, avg_stim.avg_activation.numpy()) 
+    # classic_tom = ToMLocDataset()
+    # classic_units = LayerUnits(import_model = llm, localizer = classic_tom, device = device)
+    # classic_loc = LocImportantUnits("classic", classic_units.data_activation)
+    # benchmark = ToMiPromptEngineering()
+    # avg_stim = AverageTaskStimuli(benchmark, llm, device)
+    # mean_imputation = MeanImputation(avg_stim.avg_activation)
+    # model_name = model_checkpoint.split("/")[-1]
+    # npy_file = os.path.join("dataset", "mean_imputation", model_name, f"{type(benchmark).__name__}_meanImputation.npy")
+    # os.makedirs(os.path.dirname(npy_file), exist_ok=True)
+    # np.save(npy_file, avg_stim.avg_activation.numpy()) 
 
 if __name__ == "__main__":
     main()

@@ -11,10 +11,9 @@ from glob import glob
 import torch
 import json
 
-from benchmark import BenchmarkMMToMQA, BenchmarkToMi, BenchmarkOpenToM, BenchmarkFanToM, BenchmarkBaseline, BenchmarkVisionText, ToMiPromptEngineering, MMToMQAPromptEngineering, MATHBenchmark, OpenToMPromptEngineering
+from benchmark import BenchmarkMMToMQA, BenchmarkToMi, BenchmarkOpenToM, BenchmarkFanToM, BenchmarkBaseline, BenchmarkVisionText, ToMiPromptEngineering, MMToMQAPromptEngineering, MATHBenchmark, OpenToMPromptEngineering, FanToMPromptEngineering
 from src import (
-                AssessmentTopK,
-                Assessmentv4,
+                Assessmentv6,
                 setup_environment,
                  ImportModel,
                  load_chat_template,
@@ -37,8 +36,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Run experiments with language models.")
     parser.add_argument("--model_func", type=str, default="AutoModelForCausalLM", help="Mode processing function for VLM")
     parser.add_argument("--model_name", type=str, default="meta-llama/Llama-3.1-8B-Instruct", help="Model checkpoint path.")
-    parser.add_argument("--benchmark", type=str, choices=["ToMi", "full_OpenToM", "FanToM", "MATH"], default="ToMi", help="ToM/MultipleDemand Benchmark")
-    parser.add_argument("--lesion", type=str, choices=["Zeroing", "MeanImputation"], default="MeanImputation", help="Lesion Method")
+    parser.add_argument("--benchmark", type=str, choices=["ToMi", "full_OpenToM", "FanToM", "MATH"], default="FanToM", help="ToM/MultipleDemand Benchmark")
+    parser.add_argument("--lesion", type=str, choices=["Zeroing", "MeanImputation"], default="Zeroing", help="Lesion Method")
     parser.add_argument("--cache", type=str, default="CACHE_DIR", help="Temporary: two cache.")
     return parser.parse_args()
 
@@ -46,7 +45,7 @@ def parse_arguments():
 benchmark_config = {
     "ToMi": ToMiPromptEngineering,
     "full_OpenToM": OpenToMPromptEngineering,
-    "FanToM": BenchmarkFanToM,
+    "FanToM": FanToMPromptEngineering,
 }
 
 def print_result(res):
@@ -90,13 +89,13 @@ def main():
     ######################################################
 
 
-    assess = Assessmentv4(import_model=llm,
+    assess = Assessmentv6(import_model=llm,
                         ablation=lesion,
                         device=device)
     
 
     ################# Setting ###############################################
-    percentages = np.array([0.005, 0.01, 0.02, 0.04, 0.08, 0.1, 0.15, 0.2, 0.25])
+    percentages = np.array([0.05])
     random_predictions = []
     n_random = 50
     ########################################################################

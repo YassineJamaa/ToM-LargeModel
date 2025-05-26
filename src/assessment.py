@@ -725,8 +725,8 @@ class Assessmentv4:
         predictions = []
         self.ablation.clear_hooks(self.import_model)
         if mask is not None: # I. Set the mask if present
-            language_model = self.import_model.get_language_model()
-            for idx, layer in enumerate(language_model.model.layers):
+            pre_layer = self.import_model.get_prelayers_model()
+            for idx, layer in enumerate(pre_layer.layers):
                 layer.register_forward_hook(self.ablation.get_hook_ablate(idx, mask))
         for idx in tqdm(range(len(self.data))): # II. Mask'inference
             prediction = self.inference_row(idx)
@@ -785,6 +785,180 @@ class Assessmentv4:
         elif inference_mode == "quick":
             pass
 
+class AssessmentLogits:
+    def __init__(self,
+                 import_model: ImportModel,
+                 ablation: ZeroingAblation,
+                 device: str):
+        self.import_model = import_model
+        self.mask_top = None
+        self.ablation = ablation
+        self.device = device
+        self.modality = None
+        self.data = None
+        self.benchmark = None
+        self.topK = 1
+        self.generated_tokens = 1
+        if self.import_model.model_type=="LLM":
+            self.get_inputs = self.get_inputs_text
+        elif self.import_model.model_type=="VLM":
+            self.get_inputs = self.get_inputs_vision_text
+        else:
+            self.get_inputs = None
+        
+    def set_generated_tokens(self, generated_tokens: int):
+        self.generated_tokens = generated_tokens
+    
+    def set_modality(self, modality):
+        if isinstance(self.benchmark, BenchmarkText) or self.import_model.model_type=="LLM":
+            self.modality = "text_only"
+        elif isinstance(self.benchmark, BenchmarkVisionText):
+            if modality in {"text-only", "vision-text"}: # Allow the user to specify "text-only" or "vision-text" for BenchmarkVisionText
+                self.modality = modality
+            else:
+                raise ValueError("For BenchmarkVisionText, modality must be 'text-only' or 'vision-text'.")
+        
+    def set_mask_top(self, mask):
+        self.mask_top = mask
+    
+    def get_random_mask(self, seed=42):
+        if seed: # Set the seed of the reproducibility
+            np.random.seed(seed)
+        percentage = np.sum(self.mask_top) / self.mask_top.size # Calculate the total number of units
+        num_units_to_select = int(self.mask_top.size * percentage)
+        mask_flat = np.zeros(self.mask_top.size, dtype=int) # Create a flattened array of zeros
+        selected_indices = np.random.choice(self.mask_top.size, num_units_to_select, replace=False) # Randomly select indices and set them to 1
+        mask_flat[selected_indices] = 1
+        return mask_flat.reshape(self.mask_top.shape) # Reshape the mask back to the original shape
+
+    def get_inputs_text(self, text):
+        """
+        Prepares model inputs based on the user's text (Text-only).
+
+        Args:
+            text (str): User's text input.
+            frames (list, optional): List of image or video frames.
+
+        Returns:
+            dict: Processed inputs for the model.
+        """
+        inputs = self.import_model.tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(self.device)
+        return inputs
+
+    def get_inputs_vision_text(self, text, frames: Optional[list] = None):
+        """
+        Prepares model inputs based on the user's text and optional media (images or videos).
+
+        Args:
+            text (str): User's text input.
+            frames (list, optional): List of image or video frames.
+
+        Returns:
+            dict: Processed inputs for the model.
+        """
+        args_processor = {"text": text}
+        if frames:
+            args_processor["images"] = frames
+        inputs = self.import_model.processor(**args_processor, return_tensors="pt").to(self.device)
+        return inputs
+    
+    def inference_row(self, position: int):
+        """
+        Process a row from the benchmark and call the return_inputs function with dynamic arguments.
+        """
+        row = self.benchmark[position]
+        inputs_args = {"text": row["text"]}
+        if self.modality == "vision-text" and "frames" in row:
+            inputs_args["frames"] = row["frames"]
+        inputs = self.get_inputs(**inputs_args)
+
+        with torch.no_grad(): # Inference
+            outputs = self.import_model.model.generate(
+                    input_ids=inputs["input_ids"],
+                    attention_mask=inputs["attention_mask"],
+                    max_new_tokens=self.generated_tokens, 
+                    temperature = None,
+                    top_p = None,
+                    do_sample=False,
+                    top_k = None,
+                    output_scores=True, 
+                    pad_token_id=self.import_model.tokenizer.eos_token_id,
+                    return_dict_in_generate=True,
+                )
+            logits = outputs.scores[0] # Compute the logits
+            probs = torch.softmax(logits, dim=-1).cpu() # Compute the probabilities
+
+            top_indices = torch.nonzero(probs, as_tuple=True)[1] # Take only the top indices
+            top_indices = top_indices[torch.argsort(probs[0, top_indices], descending=True)] # Sort them
+            top_probs = probs[0, top_indices].tolist() # take the probs
+        return (top_indices, top_probs)
+    
+    def inference(self, mask: np.ndarray=None):
+        """ Collect the Log Softmax of the mask """
+        top_tokens = []
+        self.ablation.clear_hooks(self.import_model)
+        if mask is not None: # I. Set the mask if present
+            prelayers = self.import_model.get_prelayers_model()
+            for idx, layer in enumerate(prelayers.layers):
+                layer.register_forward_hook(self.ablation.get_hook_ablate(idx, mask))
+        for idx in tqdm(range(len(self.data))): # II. Mask'inference
+            top_tokens.append(self.inference_row(idx))
+        return top_tokens
+
+    def generate_ablation_masks(self, num_random=6, no_lesion=True, add_lesion=True, base_seed=42):
+        seeds = [base_seed + i * 1000 for i in range(num_random)]
+        percentage = self.mask_top.sum()/self.mask_top.size
+        assess_dict = OrderedDict([])
+        assess_info = []
+        if no_lesion:
+            assess_dict["no_ablation"] = None
+            assess_info.append("No Ablation")
+        if add_lesion:
+            assess_dict[f"ablate_top"] = self.mask_top.T
+            assess_info.append(f"Ablation Top-{percentage:.2%}%")
+            for idx, seed in enumerate(seeds, start=1):
+                assess_dict[f"ablate_random_{idx}"] = self.get_random_mask(seed=seed).T
+                assess_info.append(f"Random Ablation {percentage:.2%}% ({idx}/{num_random})")
+        return assess_dict, assess_info
+
+    def experiment(self,
+                   benchmark: BenchmarkBaseline,
+                   mask_top: np.ndarray,
+                   modality: str="vision-text",
+                   num_random: int=0,
+                   add_lesion: bool=True,
+                   no_lesion: bool= False,
+                   inference_mode: str="normal",
+                   topK=1,
+                   ):
+        """
+        Conduct an experiment based on the given benchmark.
+
+        Args:
+            benchmark (BenchmarkBaseline): The benchmark object, either BenchmarkText or BenchmarkVisionText.
+            modality (str, optional): Modality of the experiment. Must be "text-only" or "vision-text" for 
+                                    BenchmarkVisionText, and is set to "text-only" for BenchmarkText.
+            percentage (float, optional): Fix the top-% neural units that we are going to ablate.
+        """
+        self.topK = topK
+        self.benchmark = benchmark # 0. Set Benchmark
+        self.set_modality(modality) # I. set the modality
+        self.ablation.clear_hooks(self.import_model) # Clear model's hooks
+        self.import_model.model.eval() # Set the model to evaluation mode
+        self.set_mask_top(mask_top) # Set mask
+        assess_dict, assess_info = self.generate_ablation_masks(num_random=num_random, no_lesion=no_lesion, add_lesion=add_lesion)
+        self.data = self.benchmark.data.copy() # Set Dataset
+
+        # V. Inference
+        if inference_mode == "normal":
+            for idx, (key, mask) in islice(enumerate(assess_dict.items()), 0, None):
+                print(f"Step {idx+1}/{len(assess_info)}: {assess_info[idx]}")
+                top_tokens = self.inference(mask)
+                self.data[f"predict_{key}"] = [self.import_model.tokenizer.decode([x[0][0].item()]).strip().lower() for x in top_tokens]
+                self.data[f"probs_{key}"] = [x[1][:self.topK] for x in top_tokens]
+            return self.data
+        elif inference_mode == "quick":
+            pass
 
 class AssessmentTopK:
     def __init__(self,
@@ -976,6 +1150,427 @@ class AssessmentTopK:
                 print(f"Step {idx+1}/{len(assess_info)}: {assess_info[idx]}")
                 top_tokens = self.inference(mask)
                 self.data[f"predict_{key}"] = self.find_best_candidate(top_tokens)
+            return self.data
+        elif inference_mode == "quick":
+            pass
+
+
+class Assessmentv5:
+    def __init__(self,
+                 import_model: ImportModel,
+                 ablation: ZeroingAblation,
+                 device: str):
+        self.import_model = import_model
+        self.mask_top = None
+        self.ablation = ablation
+        self.device = device
+        self.modality = None
+        self.data = None
+        self.benchmark = None
+        self.generated_tokens = 1
+        if self.import_model.model_type=="LLM":
+            self.get_inputs = self.get_inputs_text
+        elif self.import_model.model_type=="VLM":
+            self.get_inputs = self.get_inputs_vision_text
+        else:
+            self.get_inputs = None
+        
+    def set_generated_tokens(self, generated_tokens: int):
+        self.generated_tokens = generated_tokens
+    
+    def set_modality(self, modality):
+        if isinstance(self.benchmark, BenchmarkText) or self.import_model.model_type=="LLM":
+            self.modality = "text_only"
+        elif isinstance(self.benchmark, BenchmarkVisionText):
+            if modality in {"text-only", "vision-text"}: # Allow the user to specify "text-only" or "vision-text" for BenchmarkVisionText
+                self.modality = modality
+            else:
+                raise ValueError("For BenchmarkVisionText, modality must be 'text-only' or 'vision-text'.")
+        
+    def set_mask_top(self, mask):
+        self.mask_top = mask
+    
+    def get_random_mask(self, seed=42):
+        if seed: # Set the seed of the reproducibility
+            np.random.seed(seed)
+        percentage = np.sum(self.mask_top) / self.mask_top.size # Calculate the total number of units
+        num_units_to_select = int(self.mask_top.size * percentage)
+        mask_flat = np.zeros(self.mask_top.size, dtype=int) # Create a flattened array of zeros
+        selected_indices = np.random.choice(self.mask_top.size, num_units_to_select, replace=False) # Randomly select indices and set them to 1
+        mask_flat[selected_indices] = 1
+        return mask_flat.reshape(self.mask_top.shape) # Reshape the mask back to the original shape
+
+    def get_inputs_text(self, text):
+        """
+        Prepares model inputs based on the user's text (Text-only).
+
+        Args:
+            text (str): User's text input.
+            frames (list, optional): List of image or video frames.
+
+        Returns:
+            dict: Processed inputs for the model.
+        """
+        inputs = self.import_model.tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(self.device)
+        return inputs
+
+    def get_inputs_vision_text(self, text, frames: Optional[list] = None):
+        """
+        Prepares model inputs based on the user's text and optional media (images or videos).
+
+        Args:
+            text (str): User's text input.
+            frames (list, optional): List of image or video frames.
+
+        Returns:
+            dict: Processed inputs for the model.
+        """
+        if frames:
+            content_type = "image" if len(frames) == 1 else "video"
+            frames = (
+                frames[0]
+                if content_type == "image"
+                else np.stack([np.array(frame.convert("RGB").resize((800, 800))) for frame in "frames"])
+            )
+        else:
+            content_type = None
+            frames = None
+        
+        messages_test = [
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": text}] 
+                        + ([{"type": content_type}] if content_type is not None else []),
+            }
+        ]
+
+        # Generate the prompt message
+        prompt_message = self.import_model.processor.apply_chat_template(
+            messages_test,
+            videos=frames if content_type == "video" else [],
+            add_generation_prompt=True
+        )
+
+        # Prepare the arguments dynamically
+        processor_args = {
+            "text": prompt_message,
+            "return_tensors": "pt"
+        }
+        if content_type == "video":
+            processor_args["videos"] = frames
+        elif content_type == "image":
+            processor_args["images"] = frames
+
+        # Pass arguments to the processor
+        inputs = self.import_model.processor(**processor_args).to(0, torch.float16)
+        return inputs
+    
+    def inference_row(self, position: int):
+        """
+        Process a row from the benchmark and call the return_inputs function with dynamic arguments.
+        """
+        row = self.benchmark[position]
+        inputs_args = {"text": row["text"]}
+        if self.modality == "vision-text" and "frames" in row:
+            inputs_args["frames"] = row["frames"]
+        inputs = self.get_inputs(**inputs_args)
+
+        if self.modality=="text-only":
+            args_generate={"input_ids": inputs["input_ids"], "attention_mask":inputs["attention_mask"]}
+        else:
+            args_generate=inputs
+
+        with torch.no_grad(): # Inference
+            outputs = self.import_model.model.generate(
+                    **args_generate,
+                    max_new_tokens=self.generated_tokens, 
+                    temperature = None,
+                    top_p = None,
+                    do_sample=False,
+                    top_k = None,
+                    pad_token_id=self.import_model.tokenizer.eos_token_id
+                )
+            decoded_token = self.import_model.tokenizer.batch_decode(outputs[0], skip_special_tokens=True)
+        return decoded_token[-1].strip()
+    
+    def inference(self, mask: np.ndarray=None):
+        """ Collect the Log Softmax of the mask """
+        predictions = []
+        self.ablation.clear_hooks(self.import_model)
+        if mask is not None: # I. Set the mask if present
+            prelayers = self.import_model.get_prelayers_model()
+            for idx, layer in enumerate(prelayers.layers):
+                layer.register_forward_hook(self.ablation.get_hook_ablate(idx, mask))
+        for idx in tqdm(range(len(self.data))): # II. Mask'inference
+            prediction = self.inference_row(idx)
+            predictions.append(prediction)
+        return predictions
+
+    def generate_ablation_masks(self, num_random=6, no_lesion=True, add_lesion=True, base_seed=42):
+        seeds = [base_seed + i * 1000 for i in range(num_random)]
+        percentage = self.mask_top.sum()/self.mask_top.size
+        assess_dict = OrderedDict([])
+        assess_info = []
+        if no_lesion:
+            assess_dict["no_ablation"] = None
+            assess_info.append("No Ablation")
+        if add_lesion:
+            assess_dict[f"ablate_top"] = self.mask_top.T
+            assess_info.append(f"Ablation Top-{percentage:.2%}%")
+            for idx, seed in enumerate(seeds, start=1):
+                assess_dict[f"ablate_random_{idx}"] = self.get_random_mask(seed=seed).T
+                assess_info.append(f"Random Ablation {percentage:.2%}% ({idx}/{num_random})")
+        return assess_dict, assess_info
+
+    def experiment(self,
+                   benchmark: BenchmarkBaseline,
+                   mask_top: np.ndarray,
+                   modality: str="vision-text",
+                   num_random: int=2,
+                   add_lesion: bool=True,
+                   no_lesion: bool= True,
+                   inference_mode: str="normal",
+                   ):
+        """
+        Conduct an experiment based on the given benchmark.
+
+        Args:
+            benchmark (BenchmarkBaseline): The benchmark object, either BenchmarkText or BenchmarkVisionText.
+            modality (str, optional): Modality of the experiment. Must be "text-only" or "vision-text" for 
+                                    BenchmarkVisionText, and is set to "text-only" for BenchmarkText.
+            percentage (float, optional): Fix the top-% neural units that we are going to ablate.
+        """
+        self.benchmark = benchmark # 0. Set Benchmark
+        self.set_modality(modality) # I. set the modality
+        self.ablation.clear_hooks(self.import_model) # Clear model's hooks
+        self.import_model.model.eval() # Set the model to evaluation mode
+        self.set_mask_top(mask_top) # Set mask
+        assess_dict, assess_info = self.generate_ablation_masks(num_random=num_random, no_lesion=no_lesion, add_lesion=add_lesion)
+        self.data = self.benchmark.data.copy() # Set Dataset
+
+        # V. Inference
+        if inference_mode == "normal":
+            for idx, (key, mask) in islice(enumerate(assess_dict.items()), 0, None):
+                print(f"Step {idx+1}/{len(assess_info)}: {assess_info[idx]}")
+                predictions = self.inference(mask)
+                self.data[f"predict_{key}"] = predictions
+            return self.data
+        elif inference_mode == "quick":
+            pass
+
+
+
+
+
+def add_answer_tag(text):
+    if text.endswith("\n"):
+        return text + "Answer letter:"
+    elif text.endswith(":"):
+        return text + " Answer letter:"
+    else:
+        return text + " Answer letter:"
+    
+class Assessmentv6:
+    def __init__(self,
+                 import_model: ImportModel,
+                 ablation: ZeroingAblation,
+                 device: str):
+        self.import_model = import_model
+        self.mask_top = None
+        self.ablation = ablation
+        self.device = device
+        self.modality = None
+        self.data = None
+        self.benchmark = None
+        self.generated_tokens = 1
+        if self.import_model.model_type=="LLM":
+            self.get_inputs = self.get_inputs_text
+        elif self.import_model.model_type=="VLM":
+            self.get_inputs = self.get_inputs_vision_text
+        else:
+            self.get_inputs = None
+        
+    def set_generated_tokens(self, generated_tokens: int):
+        self.generated_tokens = generated_tokens
+    
+    def set_modality(self, modality):
+        if isinstance(self.benchmark, BenchmarkText) or self.import_model.model_type=="LLM":
+            self.modality = "text_only"
+        elif isinstance(self.benchmark, BenchmarkVisionText):
+            if modality in {"text-only", "vision-text"}: # Allow the user to specify "text-only" or "vision-text" for BenchmarkVisionText
+                self.modality = modality
+            else:
+                raise ValueError("For BenchmarkVisionText, modality must be 'text-only' or 'vision-text'.")
+        
+    def set_mask_top(self, mask):
+        self.mask_top = mask
+    
+    def get_random_mask(self, seed=42):
+        if seed: # Set the seed of the reproducibility
+            np.random.seed(seed)
+        percentage = np.sum(self.mask_top) / self.mask_top.size # Calculate the total number of units
+        num_units_to_select = int(self.mask_top.size * percentage)
+        mask_flat = np.zeros(self.mask_top.size, dtype=int) # Create a flattened array of zeros
+        selected_indices = np.random.choice(self.mask_top.size, num_units_to_select, replace=False) # Randomly select indices and set them to 1
+        mask_flat[selected_indices] = 1
+        return mask_flat.reshape(self.mask_top.shape) # Reshape the mask back to the original shape
+
+    def get_inputs_text(self, text):
+        """
+        Prepares model inputs based on the user's text (Text-only).
+
+        Args:
+            text (str): User's text input.
+            frames (list, optional): List of image or video frames.
+
+        Returns:
+            dict: Processed inputs for the model.
+        """
+        inputs = self.import_model.tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(self.device)
+        return inputs
+
+    def get_inputs_vision_text(self, text, frames: Optional[list] = None):
+        """
+        Prepares model inputs based on the user's text and optional media (images or videos).
+
+        Args:
+            text (str): User's text input.
+            frames (list, optional): List of image or video frames.
+
+        Returns:
+            dict: Processed inputs for the model.
+        """
+        if frames:
+            content_type = "image" if len(frames) == 1 else "video"
+            frames = (
+                frames[0]
+                if content_type == "image"
+                else np.stack([np.array(frame.convert("RGB").resize((800, 800))) for frame in "frames"])
+            )
+        else:
+            content_type = None
+            frames = None
+        
+        messages_test = [
+            {
+                "role": "user",
+                "content": [{"type": "text", "text": text}] 
+                        + ([{"type": content_type}] if content_type is not None else []),
+            }
+        ]
+
+        # Generate the prompt message
+        prompt_message = self.import_model.processor.apply_chat_template(
+            messages_test,
+            videos=frames if content_type == "video" else [],
+            add_generation_prompt=True
+        )
+
+        prompt_message = add_answer_tag(prompt_message)
+
+        # Prepare the arguments dynamically
+        processor_args = {
+            "text": prompt_message,
+            "return_tensors": "pt"
+        }
+        if content_type == "video":
+            processor_args["videos"] = frames
+        elif content_type == "image":
+            processor_args["images"] = frames
+
+        # Pass arguments to the processor
+        inputs = self.import_model.processor(**processor_args).to(0, torch.float16)
+        return inputs
+    
+    def inference_row(self, position: int):
+        """
+        Process a row from the benchmark and call the return_inputs function with dynamic arguments.
+        """
+        row = self.benchmark[position]
+        inputs_args = {"text": row["text"]}
+        if self.modality == "vision-text" and "frames" in row:
+            inputs_args["frames"] = row["frames"]
+        inputs = self.get_inputs(**inputs_args)
+
+        if self.modality=="text-only":
+            args_generate={"input_ids": inputs["input_ids"], "attention_mask":inputs["attention_mask"]}
+        else:
+            args_generate=inputs
+
+        with torch.no_grad(): # Inference
+            outputs = self.import_model.model.generate(
+                    **args_generate,
+                    max_new_tokens=self.generated_tokens, 
+                    temperature = None,
+                    top_p = None,
+                    do_sample=False,
+                    top_k = None,
+                    pad_token_id=self.import_model.tokenizer.eos_token_id
+                )
+            decoded_token = self.import_model.tokenizer.batch_decode(outputs[0], skip_special_tokens=True)
+        return decoded_token[-1].strip()
+    
+    def inference(self, mask: np.ndarray=None):
+        """ Collect the Log Softmax of the mask """
+        predictions = []
+        self.ablation.clear_hooks(self.import_model)
+        if mask is not None: # I. Set the mask if present
+            prelayers = self.import_model.get_prelayers_model()
+            for idx, layer in enumerate(prelayers.layers):
+                layer.register_forward_hook(self.ablation.get_hook_ablate(idx, mask))
+        for idx in tqdm(range(len(self.data))): # II. Mask'inference
+            prediction = self.inference_row(idx)
+            predictions.append(prediction)
+        return predictions
+
+    def generate_ablation_masks(self, num_random=6, no_lesion=True, add_lesion=True, base_seed=42):
+        seeds = [base_seed + i * 1000 for i in range(num_random)]
+        percentage = self.mask_top.sum()/self.mask_top.size
+        assess_dict = OrderedDict([])
+        assess_info = []
+        if no_lesion:
+            assess_dict["no_ablation"] = None
+            assess_info.append("No Ablation")
+        if add_lesion:
+            assess_dict[f"ablate_top"] = self.mask_top.T
+            assess_info.append(f"Ablation Top-{percentage:.2%}%")
+            for idx, seed in enumerate(seeds, start=1):
+                assess_dict[f"ablate_random_{idx}"] = self.get_random_mask(seed=seed).T
+                assess_info.append(f"Random Ablation {percentage:.2%}% ({idx}/{num_random})")
+        return assess_dict, assess_info
+
+    def experiment(self,
+                   benchmark: BenchmarkBaseline,
+                   mask_top: np.ndarray,
+                   modality: str="vision-text",
+                   num_random: int=2,
+                   add_lesion: bool=True,
+                   no_lesion: bool= True,
+                   inference_mode: str="normal",
+                   ):
+        """
+        Conduct an experiment based on the given benchmark.
+
+        Args:
+            benchmark (BenchmarkBaseline): The benchmark object, either BenchmarkText or BenchmarkVisionText.
+            modality (str, optional): Modality of the experiment. Must be "text-only" or "vision-text" for 
+                                    BenchmarkVisionText, and is set to "text-only" for BenchmarkText.
+            percentage (float, optional): Fix the top-% neural units that we are going to ablate.
+        """
+        self.benchmark = benchmark # 0. Set Benchmark
+        self.set_modality(modality) # I. set the modality
+        self.ablation.clear_hooks(self.import_model) # Clear model's hooks
+        self.import_model.model.eval() # Set the model to evaluation mode
+        self.set_mask_top(mask_top) # Set mask
+        assess_dict, assess_info = self.generate_ablation_masks(num_random=num_random, no_lesion=no_lesion, add_lesion=add_lesion)
+        self.data = self.benchmark.data.copy() # Set Dataset
+
+        # V. Inference
+        if inference_mode == "normal":
+            for idx, (key, mask) in islice(enumerate(assess_dict.items()), 0, None):
+                print(f"Step {idx+1}/{len(assess_info)}: {assess_info[idx]}")
+                predictions = self.inference(mask)
+                self.data[f"predict_{key}"] = predictions
             return self.data
         elif inference_mode == "quick":
             pass

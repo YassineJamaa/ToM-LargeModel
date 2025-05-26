@@ -257,10 +257,13 @@ class BenchmarkFanToM(BenchmarkText):
         return {"text": self.data["prompt"].iloc[idx]}
 
 
+
+
 class FanToMPromptEngineering(BenchmarkText):
     def __init__(self, 
-                 is_full: Optional[bool] = True,
-                 subset: Optional[int]=None):
+                 is_full: Optional[bool] = False,
+                 subset: Optional[int]=None,
+                 prompt_type: str="normal"):
         """ 
         """
         super().__init__()
@@ -270,7 +273,7 @@ class FanToMPromptEngineering(BenchmarkText):
             self.story = "short_context"
 
         df = self.load()
-        self.data = self.intermediate_prompting(df, subset)
+        self.data = self.intermediate_prompting(df, subset, prompt_type=prompt_type)
         self.expanded_df = self.build_expanded_df()
     
     def load(self):
@@ -308,7 +311,7 @@ class FanToMPromptEngineering(BenchmarkText):
             lambda row: (
                 f"{context_template.format(characters=format_characters(row['characters']))}\nStory:\n{row[self.story]}\nQuestion: {row['question']}\nOptions:\n" +
                 "\n".join([f"- {cand}" for cand in row["cands"]]) +
-                "\nAnswer:"
+                "\nAnswer letter:"
             ),
             axis=1
         )
@@ -323,7 +326,8 @@ class FanToMPromptEngineering(BenchmarkText):
     
     def intermediate_prompting(self,
                           df: pd.DataFrame,
-                          subset: Optional[int]=None):
+                          subset: Optional[int]=None,
+                          prompt_type: str="normal"):
         # Extract lists of each key into separate columns
         df["question"] = df["beliefQAs"].apply(lambda x: x[0]["question"])
         df["order"] = df["beliefQAs"].apply(lambda x: x[0]["tom_type"])
@@ -361,8 +365,21 @@ class FanToMPromptEngineering(BenchmarkText):
                 f"Options:\n{enumerated_cands}\nAnswer:"
         )
 
+        def generate_prompt_variant(row):
+            # Dynamically enumerate candidates
+            enumerated_cands = "\n".join([f"{chr(97 + i)}. {cand}" for i, cand in enumerate(row["cands"])])
+            return (
+                f"{context_template.format(characters=format_characters(row['characters']))}\nStory:{row[self.story]}\nQuestion: {row['question']}\n"
+                f"Options:\n{enumerated_cands}\nAnswer letter:"
+        )
+
+        prompt_dict = {
+            "normal": generate_prompt,
+            "variant": generate_prompt_variant
+        }
+
         # Apply the function to generate prompts
-        df["prompt"] = df.apply(generate_prompt, axis=1)
+        df["prompt"] = df.apply(prompt_dict[prompt_type], axis=1)
 
         # Keep only the False Belief questions
         df = df[df["question_type"] == 'tom:belief:inaccessible'].copy().reset_index(drop=True)

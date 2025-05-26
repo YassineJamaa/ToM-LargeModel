@@ -99,3 +99,27 @@ def get_masked_random(loc: LocImportantUnits, percentage: float, seed: int):
     mask_random = mask_random.reshape(loc.t_values.shape)
 
     return mask_random
+
+
+def get_masked_both_tails(loc: LocImportantUnits, percentage: float):
+    if percentage==0:
+        return np.zeros_like(loc.t_values, dtype=np.int64)
+    abs_tvalues = np.abs(loc.t_values)
+    num_top_elements = int(abs_tvalues.size * percentage)
+
+    # Flatten the matrix, find the threshold value for the top 1%
+    flattened_matrix = abs_tvalues.flatten()
+
+    # Replace NaN with a sentinel value (e.g., -inf)
+    flattened_matrix = np.nan_to_num(flattened_matrix, nan=-np.inf)
+
+    # Filter out -inf values
+    filtered_matrix = flattened_matrix[flattened_matrix != -np.inf]
+    if len(filtered_matrix) > num_top_elements:
+        threshold_value = np.partition(flattened_matrix, -num_top_elements)[-num_top_elements]
+    else:
+        threshold_value = -np.inf  # or handle this case as needed      
+
+    # Create a binary mask where 1 represents the top 1% elements, and 0 otherwise
+    mask_units = np.where(abs_tvalues >= threshold_value, 1, 0)
+    return mask_units

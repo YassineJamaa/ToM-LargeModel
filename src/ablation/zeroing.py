@@ -12,8 +12,8 @@ class ZeroingAblation:
         Args:
             import_model: An instance of ImportLLM or ImportVLM.
         """
-        language_model = import_model.get_language_model()
-        for layer in language_model.model.layers:
+        prelayers = import_model.get_prelayers_model()
+        for layer in prelayers.layers:
             layer._forward_hooks.clear()
     
     def get_hook_ablate(self, idx, mask):

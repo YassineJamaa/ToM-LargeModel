@@ -47,7 +47,7 @@ class OpenToMPromptEngineering(BenchmarkText):
             enumerated_cands = "\n".join([f"{chr(97 + i)}. {cand}" for i, cand in enumerate(row["cands"])])
             return (
                 f"{context}\nStory: {row[self.story]}\nQuestion: {row['question']}\n"
-                f"Options:\n{enumerated_cands}\nAnswer:"
+                f"Options:\n{enumerated_cands}\nAnswer letter:"
             )
 
         # Apply the function to generate prompts

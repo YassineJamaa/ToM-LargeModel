@@ -1,9 +1,24 @@
 from datasets import load_dataset
 import numpy as np
 import pandas as pd
-from .utils import BenchmarkText
+from .utils import BenchmarkVisionText
+from PIL import Image
 
-class MathVistaBenchmark(BenchmarkText): # Change the inheritance to BenchmarkText
+def process_image(img):
+    # Convert to grayscale (black & white)
+    img = img.convert("L")  
+
+    # Ensure the image is at least 40x40 pixels
+    min_size = 40
+    img = img.resize((max(min_size, img.size[0]), max(min_size, img.size[1])), Image.LANCZOS)
+
+    # Resize if larger than 600x600
+    if img.size[0] > 650 or img.size[1] > 600:
+        img = img.resize((650, 650), Image.LANCZOS)
+    return img
+
+
+class MathVistaBenchmark(BenchmarkVisionText): # Change the inheritance to BenchmarkText
     def __init__(self,
                  subset: int=None):
         df = self.preprocessing()
@@ -14,6 +29,7 @@ class MathVistaBenchmark(BenchmarkText): # Change the inheritance to BenchmarkTe
         df = pd.DataFrame(ds["testmini"])
         df = df.loc[df["choices"].notna()]
         df.rename(columns={"choices": "cands"}, inplace=True)
+        df['decoded_image'] = df['decoded_image'].apply(process_image)
         return df
     
     def prompting(self, df: pd.DataFrame, subset: int=None):
@@ -31,7 +47,7 @@ class MathVistaBenchmark(BenchmarkText): # Change the inheritance to BenchmarkTe
             enumerated_cands = "\n".join([f"{chr(97 + i)}. {cand}" for i, cand in enumerate(row["cands"])])
             return (
                 f"{row["context_options"]}\nQuestion: {row['question']}\n"
-                f"Options:\n{enumerated_cands}\nAnswer:"
+                f"Options:\n{enumerated_cands}"
             )
         
         # Apply the function to generate prompts
@@ -46,4 +62,4 @@ class MathVistaBenchmark(BenchmarkText): # Change the inheritance to BenchmarkTe
         """ Extract the prompt with the corresponding videos frames """
         frames = self.data["decoded_image"].iloc[pos]
         prompt = self.data["prompt"].iloc[pos]
-        return {"text": prompt, "frames": frames}
+        return {"text": prompt, "frames": [frames]}

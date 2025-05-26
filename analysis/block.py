@@ -6,6 +6,7 @@ import argparse
 import numpy as np
 import importlib
 import json
+import re
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from transformers import (AutoConfig,
@@ -25,6 +26,22 @@ from src import (ImportModel,
                  Assessment,
                  load_chat_template)
 from analysis.utils import dice_coefficient
+
+
+
+
+def add_answer_after_assistant(text):
+    return re.sub(r'(?i)\b(ASSISTANT:)', r'\1 Answer:', text)
+
+def modify_chat_template_llama(text):
+    pattern = r"(<\|start_header_id\|>assistant<\|end_header_id\|>\\n\\n)"
+    replacement = r"\1Answer letter:"
+    return re.sub(pattern, replacement, text)
+
+def modify_chat_template_qwen(text):
+    pattern = r"(<|im_start|>assistant\n)"
+    replacement = r"\1Answer letter:"
+    return re.sub(pattern, replacement, text)
 
 def set_model(model_checkpoint: str,
               model_type: str,
@@ -54,10 +71,11 @@ def set_model(model_checkpoint: str,
                                     model=model,
                                     tokenizer=tokenizer)
     elif model_type == "VLM":
-        chat_template = load_chat_template("dataset/save_checkpoints/vlm_chat_template.txt")
+        # chat_template = load_chat_template("dataset/save_checkpoints/vlm_chat_template.txt")
 
         model = model_fn.from_pretrained(model_checkpoint,
                                         device_map="auto",
+                                        torch_dtype="bfloat16",
                                         cache_dir=cache_dir,
                                         token=token_hf)
         tokenizer = AutoTokenizer.from_pretrained(model_checkpoint, 
@@ -70,8 +88,16 @@ def set_model(model_checkpoint: str,
         import_model = ImportModel(model_type,
                                    model,
                                    tokenizer,
-                                   processor,
-                                   chat_template)
+                                   processor,)
+        model_name = model_checkpoint.split("/")[-1]
+        # if "Llama-3.2" in model_name:
+        #     import_model.processor.chat_template = modify_chat_template_llama(import_model.processor.chat_template)
+        # elif "Qwen2.5-VL" in model_name:
+        #     import_model.processor.chat_template = modify_chat_template_llama(import_model.processor.chat_template)
+        # else:
+        #     chat_template = load_chat_template("dataset/save_checkpoints/vlm_chat_template.txt")
+        #     import_model.processor.chat_template = add_answer_after_assistant(chat_template)
+
     else:
         raise ValueError(f"{model_type} is not a model architecture supported.")
 

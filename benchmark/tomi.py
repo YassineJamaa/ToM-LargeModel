@@ -84,33 +84,6 @@ class ToMiPromptEngineering(BenchmarkText):
         self.data = self.intermediate_prompting(subset=subset)
         self.expanded_df = self.build_expanded_df()
     
-    def classic_prompting(self, subset):
-        csv_file="dataset/benchmarks/ToMi/ToMi-finalNeuralTOM.csv"
-        df = pd.read_csv(csv_file)
-        df = df[df["qOrder"]=='first_order'].reset_index(drop=True)
-        # Convert the 'cands' column from string representation of lists to actual lists
-        df["cands"] = df["cands"].apply(ast.literal_eval)
-
-        context = (
-            "The following multiple choice question is based on the following story. The question "
-            "is related to Theory-of-Mind. Read the story and then answer the question. You are tasked to make "
-            " a decision from the given options: a, b. Respond with only one letter that represents your decision."
-            "Do not include any additional text, explanation, or punctuation—just the single letter corresponding to your choice."
-        )
-
-        df["prompt"] = df.apply(
-            lambda row: f"{context}\nStory: {row["story"]}\nQuestion: {row["question"]}\nOptions:\n- {row["cands"][0]}\n- {row["cands"][1]}\nAnswer:",
-            axis=1
-        )
-
-        # Keep only the False Belief Stories
-        df = df[~df["falseTrueBelief"]].copy().reset_index(drop=True)
-
-        if (subset is not None) and isinstance(subset, int) and (subset > 0) and (subset < len(df)):
-            df = df.iloc[:subset]
-        
-        return df
-    
     def intermediate_prompting(self, subset):
         csv_file = "dataset/benchmarks/ToMi/ToMi-finalNeuralTOM.csv"
         df = pd.read_csv(csv_file)
