@@ -8,8 +8,8 @@ In ```ToMechanims```, we propose a framework that enables anyone to apply the fu
 
 
 <p align="center">
-  <img src="assets/scheme_project.png" alt="Description 1" width="45%" />
-  <img src="assets/scheme_project.png" alt="Description 2" width="45%" />
+  <img src="assets/framework-v2.png" alt="Description 1" width="45%" />
+  <img src="assets/contrast-diagram.png" alt="Description 2" width="45%" />
 </p>
 
 # Abstract
