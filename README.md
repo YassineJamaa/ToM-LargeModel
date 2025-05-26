@@ -41,7 +41,40 @@ HF_ACCESS_TOKEN=<Huggingface token>
  ```
 
 ## Usage
-### Quick Start
+This script runs experiments with language models using different benchmarks and localization methods.
+
+### Command-Line Arguments
+```
+python experiment/EXTRA_ANALYSIS/run.py [--model_func MODEL_FUNC]
+                 [--model_name MODEL_NAME]
+                 [--cache CACHE_DIR]
+                 [--localizer LOCALIZER]
+                 [--method METHOD]
+                 [--benchmark_names BENCHMARK_NAMES [BENCHMARK_NAMES ...]]
+```
+
+### Example
+```
+python script.py --model_func AutoModelForCausalLM \
+                 --model_name meta-llama/Llama-3.2-1B-Instruct \
+                 --cache ./cache \
+                 --localizer ToM \
+                 --method revised \
+                 --benchmark_names ToMi FanToM
+```
+
+| Argument            | Default                            | Description                                                                |
+| ------------------- | ---------------------------------- | -------------------------------------------------------------------------- |
+| `--model_func`      | `AutoModelForCausalLM`             | Model loading function (e.g., for VLMs or LLMs).                           |
+| `--model_name`      | `meta-llama/Llama-3.1-8B-Instruct` | Model checkpoint path from HuggingFace or local.                           |
+| `--cache`           | `CACHE_DIR`                        | Path to cache directory (used for temporary storage).                      |
+| `--localizer`       | `ToM`                              | Type of functional localizer (`ToM`, `MD`, or `language`).                 |
+| `--method`          | `revised`                          | Lesioning method (`revised` or `initial`).                                 |
+| `--benchmark_names` | `ToMi`                             | List of benchmarks to evaluate (`ToMi`, `FanToM`, `MATH`, `OpenToM`, `MMStar`, `MathVista`) |
+
+
+
+
 
 
 
