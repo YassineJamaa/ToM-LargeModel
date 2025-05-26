@@ -19,8 +19,7 @@ We investigate the use of contrast-based functional localizers–a paradigm insp
    - [Dependencies](#dependencies)  
 
 2. [Usage](#usage)  
-   - [Quick Start](#quick-start)  
-   - [Detailed Examples](#detailed-examples)  
+ 
 
 
 ## Setup
