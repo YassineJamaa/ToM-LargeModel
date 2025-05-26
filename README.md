@@ -9,7 +9,9 @@ In ```ToMechanims```, we propose a framework that enables anyone to apply the fu
 ![Scheme](assets/scheme_project.png)
 
 
-**Caution:**: this package is still under development and may change rapidly over the next few weeks.
+# Abstract
+
+We investigate the use of contrast-based functional localizers–a paradigm inspired by cognitive neuroscience–to identify key neural units that underpin social and mathematical reasoning in large foundation models. Motivated by recent breakthroughs in large language models and advances in mechanistic interpretability, our study adopts the traditional approaches to capture model correlates of Theory-of-Mind (ToM) and Multiple-Demand (MD) processes. Using curated task contrasts, we localized candidate units across a range of transformer-based language models and vision-language models, and then applied targeted lesioning to assess their causal role in task performance on false-belief tasks and math reasoning. Two contrast localizer methods were evaluated: one in which the t-distribution was computed after converting the activation units into their absolute values, and an alternate method that computed the t-distribution directly on the raw, signed activations. For both approaches, while lesioning the most activated units does not induce a significant degradation in accuracy beyond that observed with random unit ablations, unexpected behaviors were observed: lesioning the least activated units sometimes led to either performance degradation or improvement, and the MD localizer impaired performance on both math and ToM tasks. These findings raise concerns about the specificity of the current localizer design for isolating MD and ToM reasoning, highlighting the need for further investigation to refine the method and more accurately capture task-specific activation dynamics.
 
 ## Table of Contents
 
@@ -19,10 +21,6 @@ In ```ToMechanims```, we propose a framework that enables anyone to apply the fu
 2. [Usage](#usage)  
    - [Quick Start](#quick-start)  
    - [Detailed Examples](#detailed-examples)  
-
-6. [Results and Benchmarks](#results-and-benchmarks)  
-
-7. [Future Work](#future-work)
 
 
 ## Setup
@@ -47,6 +45,4 @@ HF_ACCESS_TOKEN=<Huggingface token>
 
 
 
-## To do:
-- [ ] Abstract
-- [ ] Argument description
+
